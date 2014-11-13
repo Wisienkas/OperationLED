@@ -4,11 +4,11 @@ OFLAGS=-lm
 SRC=src/
 BIN=bin/
 
-buildclient: $(SRC)soundAssign.c
-	$(CC) $(CFLAGS) $(SRC)soundAssign.c -o $(BIN)client
+buildclient: $(SRC)client.c
+	$(CC) $(CFLAGS) $(SRC)client.c -o $(BIN)client
 
-buildserver: $(SRC)soundserver.c
-	$(CC) $(CFLAGS) $(SRC)soundserver.c $(OFLAGS) -o $(BIN)server
+buildserver: $(SRC)server.c
+	$(CC) $(CFLAGS) $(SRC)server.c $(OFLAGS) -o $(BIN)server
 
 build: buildserver buildclient
 
