@@ -150,7 +150,7 @@ int countNumbers()
 void addData()
 {
 	printf("Adding Data\n");
-	float *ptr;///////////////////
+	float *ptr = 0;///////////////////
 	printf("Getting numbers\n");
 	getNumbers(ptr);
 	printf("Counting observations\n");
