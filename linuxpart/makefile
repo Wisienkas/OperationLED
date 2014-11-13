@@ -21,7 +21,7 @@ runserver: $(BIN)server
 	$(BIN)server
 
 runclient: $(BIN)client
-	$(BIN)client
+	$(BIN)client 828 717 999 7 62
 
 buildruns: buildserver runserver
 

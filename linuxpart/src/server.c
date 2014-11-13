@@ -12,7 +12,7 @@
 
 #define PORT 8888
 #define BACKLOG 10
-#define MAXSIZE 256
+#define MAXSIZE 1024
 
 struct values 
 {
@@ -42,7 +42,7 @@ void loop();
 void addData();
 int countNumbers();
 void sendData();
-void getNumbers(float *numbers);
+float * getNumbers();
 float getMean(float *num, int n);
 float getSd(float *num, int n);
 float getMin(float *num, int n);
@@ -150,23 +150,18 @@ int countNumbers()
 void addData()
 {
 	printf("Adding Data\n");
-	float *ptr = 0;///////////////////
-	printf("Getting numbers\n");
-	getNumbers(ptr);
-	printf("Counting observations\n");
 	int n = countNumbers();
-
-	printf("Setting results\n");
+	float *ptr = malloc(sizeof(float) * n);
+	ptr = getNumbers(ptr);
 
 	results[r_index].mean = getMean(ptr, n);
 	results[r_index].sd = getSd(ptr, n);
 	results[r_index].min = getMin(ptr, n);
 	results[r_index].max = getMax(ptr, n);
 
-	printf("Freeing pointer\n");
 	free(ptr);
 
-	if(r_index == 5)
+	if(r_index == 4)
 	{
 		sendData();
 		r_index = 0;
@@ -177,10 +172,8 @@ void addData()
 
 char *substring(char *str, int start, int length)
 {
-	char *ptr;
-	int c;
-
-	ptr = malloc(length + 1);
+	char *ptr = malloc(length + 1);
+	int c = 0;
 
 	if(ptr == NULL)
 	{
@@ -188,8 +181,7 @@ char *substring(char *str, int start, int length)
 		exit(1);
 	}
 
-	c = 0;
-	while ( c < start - 1 ) 
+	while ( c < start ) 
 	{
 		str++;
 		c++;
@@ -208,11 +200,8 @@ char *substring(char *str, int start, int length)
 	return ptr;
 }
 
-void getNumbers(float *numbers){
-	printf("Allocates memory for pointer\n");
-	numbers = malloc(sizeof(float) * countNumbers());
+float * getNumbers(float * ptr){
 	
-	printf("Memory calculated\n");
 	int i = 0;
 	int n = 0;
 	int start = 0;
@@ -221,47 +210,59 @@ void getNumbers(float *numbers){
 	while(buffer[i] != '\0')
 	{
 		if(buffer[i] == ','){
-			printf("getting sub string\n");
+			
 			holder = substring(buffer, start, length);
-			numbers[n++] = (float)atoi(holder);
+			ptr[n++] = (float)atoi(holder);
+			start = i + 1;
+			length = 0;
+		} else {
+			length++;
 		}
 		i++;
 	}
+	holder = substring(buffer, start, length);
+	ptr[n++] = (float)atoi(holder);
+
+	return ptr;
 }
 
-void sendData(float num[], int n)
+void sendData()
 {
-	printf("Sending data to mysql server!\n");
-		
-}
-
-float getMean(float *num, int nu)
-{
-	printf("Getting mean\n");
-	if(nu == 0)
+	int i = 0;
+	while ( i < 5 )
 	{
-		return nu;
+		printf("Result %d had following results!\n", i);
+		printf("Mean value: %f \n", results[i].mean);
+		printf("SD value: %f \n", results[i].sd);
+		printf("Max value: %f \n", results[i].max);
+		printf("Min value: %f \n", results[i].min);
+		i++;
+	}
+	printf("Sending data to mysql server!\n");
+	
+}
+
+float getMean(float *num, int n)
+{
+	if(n == 0)
+	{
+		return n;
 	}
 	int i = 0;
 	float result = 0;
-	printf("Adding up\n");
-	while( i < nu )
+	while( i < n )
 	{
-		exit(1);
-		printf("adding index: %d with num %f\n", i, num[i]);
 		result = result + num[i];
 		i++;
 	}
-	printf("mean returning...\n");
-	return result / (float) nu;
+	return result / (float) n;
 }
 
-float getSd(float num[], int n)
+float getSd(float *num, int n)
 {
-	printf("Getting SD\n");
 	if(n == 0)
 	{
-		return 0;
+		return n;
 	}
 	float mean = getMean(num, n);
 	float deviation = 0;
@@ -270,40 +271,41 @@ float getSd(float num[], int n)
 	while( i < n )
 	{
 		deviation += (num[i] - mean) * 	(num[i] - mean);
+		i++;
 	}
 	
 	return sqrt( deviation / n);
 }
 
-float getMin(float num[], int n)
+float getMin(float *num, int n)
 {
-	printf("Getting min\n");
+	if(n == 0)
+	{
+		return n;
+	}
 	int i = 0;
-	float result = 0;
+	float result = num[i++];
 	while( i < n )
 	{
 		result = num[i] < result ? num[i] : result;
+		i++;
 	}
 	return result;
 	
 }
 
-float getMax(float num[], int n)
+float getMax(float *num, int n)
 {
-	printf("Getting max\n");
 	int i = 0;
 	if(n == 0)
 	{
-		return 0;
+		return n;
 	}
 	float result = num[i];
 	while( i < n )
 	{
 		result = num[i] > result ? num[i] : result;
+		i++;
 	}
 	return result;
 }
-
-
-
-
