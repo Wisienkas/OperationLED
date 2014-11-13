@@ -6,8 +6,7 @@
 #include<string.h>
 
 #define PORT 8888
-#define MAXSIZE 256
-
+#define MAXSIZE 1024
 
 int main(int argc, char *argv[])
 {
@@ -36,30 +35,43 @@ int main(int argc, char *argv[])
 	/* Connect the socket to the server using the address struct */
 	addr_size = sizeof(serverAddr);
 	connect(clientSocket, (struct sockaddr *) &serverAddr, addr_size);
+
+	printf("Received arguments of size: %d\n", (int)sizeof(argv));			
 	int i = 1;
+	int j = 0;
+	char comma = ',';
 	while(i < argc)
 	{
-		memcpy(buffer, argv[i], sizeof(argv[i]));
-		if ((send(clientSocket, buffer, strlen(buffer),0)) == -1)
+		strncpy(buffer + j, argv[i], strlen(argv[i]));
+		j += strlen(argv[i]);
+		if(i + 1 < argc)
 		{
-			fprintf(stderr, "Failure sending message\n");
-			close(clientSocket);
-			exit(1);
-		} else 
-		{
-			printf("Client: Message being sent: %s\n", buffer);
-			num = recv(clientSocket, buffer, sizeof(buffer), 0);
-			if(num <= 0)
-			{
-				printf("Either Connection closed or Error\n");
-				break;
-			}
-			printf("Client: Message received from Server - %s\n", buffer);
-			
+			strncpy(buffer + j, &comma, 1);
+			j++;
 		}
 		i++;
 	}
+	buffer[j] = '\0';
+	printf("the compact part is now: %s\n", buffer);
+	printf("strlen of comapct is now: %d\n", (int)strlen(buffer));
+	
+	if ((send(clientSocket, buffer, strlen(buffer),0)) == -1)
+	{
+		fprintf(stderr, "Failure sending message\n");
+		close(clientSocket);
+		exit(1);
+	} else 
+	{
+		printf("Client: Message being sent: %s\n", buffer);
+		num = recv(clientSocket, buffer, sizeof(buffer), 0);
+		if(num <= 0)
+		{
+			printf("Either Connection closed or Error\n");
+		}
+		printf("Client: Message received from Server - %s\n", buffer);
+		
+	}
 	close(clientSocket);
+	
 	return 0;
 }
-
