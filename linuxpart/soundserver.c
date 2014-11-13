@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -19,11 +20,12 @@ struct values
 	float max;
 	float mean;
 	float sd;
-}
+};
 
 struct values results[5];
+int r_index = 0;
 
-int client_fd, socket_fd;
+int client_fd, socket_fd, num;
 
 struct sockaddr_in server;
 struct sockaddr_in dest;
@@ -34,8 +36,17 @@ char buffer[MAXSIZE];
 
 int yes = 1;
 
+char *substring(char *str, int start, int length);
 void setup();
 void loop();
+void addData();
+int countNumbers();
+void sendData();
+void getNumbers(float *numbers);
+float getMean(float *num, int n);
+float getSd(float *num, int n);
+float getMin(float *num, int n);
+float getMax(float *num, int n);
 
 int main(int argc, char *argv[]) 
 {
@@ -103,6 +114,7 @@ void loop()
 				break;
 			}
 			buffer[num] = '\0';
+			addData();
 			printf("Server: Message Received %s\n", buffer);
 			
 			// Part to send to client
@@ -119,3 +131,179 @@ void loop()
 		close(client_fd);
 	}
 }
+
+int countNumbers()
+{
+	int i = 0;
+	int j = 0;
+	while(buffer[j] != '\0')
+	{
+		if(buffer[j] == ',')
+		{
+			i++;
+		}
+		j++;
+	}
+	return i + 1;
+}
+
+void addData()
+{
+	printf("Adding Data\n");
+	float *ptr;///////////////////
+	printf("Getting numbers\n");
+	getNumbers(ptr);
+	printf("Counting observations\n");
+	int n = countNumbers();
+
+	printf("Setting results\n");
+
+	results[r_index].mean = getMean(ptr, n);
+	results[r_index].sd = getSd(ptr, n);
+	results[r_index].min = getMin(ptr, n);
+	results[r_index].max = getMax(ptr, n);
+
+	printf("Freeing pointer\n");
+	free(ptr);
+
+	if(r_index == 5)
+	{
+		sendData();
+		r_index = 0;
+	} else {
+		r_index++;
+	}
+}
+
+char *substring(char *str, int start, int length)
+{
+	char *ptr;
+	int c;
+
+	ptr = malloc(length + 1);
+
+	if(ptr == NULL)
+	{
+		printf("Unable to allocate memory\n");
+		exit(1);
+	}
+
+	c = 0;
+	while ( c < start - 1 ) 
+	{
+		str++;
+		c++;
+	}
+	
+	c = 0;
+	while ( c < length ) 
+	{
+		*(ptr + c) = *str;
+		*str++;
+		c++;
+	}
+
+	*(ptr + c) = '\0';
+	
+	return ptr;
+}
+
+void getNumbers(float *numbers){
+	printf("Allocates memory for pointer\n");
+	numbers = malloc(sizeof(float) * countNumbers());
+	
+	printf("Memory calculated\n");
+	int i = 0;
+	int n = 0;
+	int start = 0;
+	int length = 0;
+	char *holder;
+	while(buffer[i] != '\0')
+	{
+		if(buffer[i] == ','){
+			printf("getting sub string\n");
+			holder = substring(buffer, start, length);
+			numbers[n++] = (float)atoi(holder);
+		}
+		i++;
+	}
+}
+
+void sendData(float num[], int n)
+{
+	printf("Sending data to mysql server!\n");
+		
+}
+
+float getMean(float *num, int nu)
+{
+	printf("Getting mean\n");
+	if(nu == 0)
+	{
+		return nu;
+	}
+	int i = 0;
+	float result = 0;
+	printf("Adding up\n");
+	while( i < nu )
+	{
+		exit(1);
+		printf("adding index: %d with num %f\n", i, num[i]);
+		result = result + num[i];
+		i++;
+	}
+	printf("mean returning...\n");
+	return result / (float) nu;
+}
+
+float getSd(float num[], int n)
+{
+	printf("Getting SD\n");
+	if(n == 0)
+	{
+		return 0;
+	}
+	float mean = getMean(num, n);
+	float deviation = 0;
+	
+	int i = 0;
+	while( i < n )
+	{
+		deviation += (num[i] - mean) * 	(num[i] - mean);
+	}
+	
+	return sqrt( deviation / n);
+}
+
+float getMin(float num[], int n)
+{
+	printf("Getting min\n");
+	int i = 0;
+	float result = 0;
+	while( i < n )
+	{
+		result = num[i] < result ? num[i] : result;
+	}
+	return result;
+	
+}
+
+float getMax(float num[], int n)
+{
+	printf("Getting max\n");
+	int i = 0;
+	if(n == 0)
+	{
+		return 0;
+	}
+	float result = num[i];
+	while( i < n )
+	{
+		result = num[i] > result ? num[i] : result;
+	}
+	return result;
+}
+
+
+
+

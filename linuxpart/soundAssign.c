@@ -60,16 +60,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Failure sending message\n");
 		close(clientSocket);
 		exit(1);
-	} else 
-	{
-		printf("Client: Message being sent: %s\n", buffer);
-		num = recv(clientSocket, buffer, sizeof(buffer), 0);
-		if(num <= 0)
-		{
-			printf("Either Connection closed or Error\n");
-		}
-		printf("Client: Message received from Server - %s\n", buffer);
-		
 	}
 	close(clientSocket);
 	
