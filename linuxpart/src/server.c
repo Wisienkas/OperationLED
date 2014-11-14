@@ -267,7 +267,7 @@ void sendData()
 	//	fprintf(stderr, "%s\n", mysql_error(conn));
 	//	exit(1);	
 	//}
-	char *insert = "INSERT INTO data (grp, sensor_name, sensor_value) VALUES(3, ";
+	char *insert = "INSERT INTO sensors (group_no, sensor_name, sensor_value) VALUES(3, ";
 	char *sql = malloc(sizeof(char) * 500);
 	int i = 0;
 	while( i < 5 )
@@ -277,9 +277,9 @@ void sendData()
 	}
 	printf("How query would look: \n %s \n", sql);
 
-	char *cmd = "StoreToDb.py \'";
+	char *cmd = "python StoreToDb.py \"";
 
-	char odd = '\'';
+	char odd = '\"';
 
 	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql) + 1));
 	strncpy(syscmd, cmd, strlen(cmd));
