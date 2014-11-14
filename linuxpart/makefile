@@ -21,7 +21,7 @@ buildpython: $(SRC)StoreToDb.py
 build: buildpython buildserver buildclient
 
 deployclient: $(SRC)client.c
-	$(CC) $(CFLAGS) $(SRC)client.c -o $(DEPLOYBIN)hwserver
+	$(CC) $(CFLAGS) $(SRC)client.c -o $(DEPLOYBIN)hwclient
 
 deployserver: $(SRC)server.c
 	$(CC) $(CFLAGS) $(SRC)server.c $(OFLAGS) -o $(DEPLOYBIN)hwserver
