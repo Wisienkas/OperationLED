@@ -14,7 +14,7 @@
 #include <netdb.h>
 
 // Database
-#include <mysql/mysql.h>
+//#include <mysql.h>
 
 /* Constants */
 #define STRING_SIZE 35
@@ -46,11 +46,9 @@ char buffer[MAXSIZE];
 
 int yes = 1;
 
-MYSQL mysql;
-
 /* Function declarations */
-char *getValues(int i, char *ptr);
-char *addParam(char *sql, char *stub, int i);
+char *getMySQLValues(int i, char *ptr);
+char *addMySQLParam(char *sql, char *stub, int i);
 char *substring(char *str, int start, int length);
 void setup();
 void loop();
@@ -243,11 +241,11 @@ float * getNumbers(float * ptr){
 
 void sendData()
 {
-	MYSQL *conn;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
-	MYSQL_STMT stmt;
-	MYSQL_BIND param[3], result[3];
+	//MYSQL *conn;
+	//MYSQL_RES *res;
+	//MYSQL_ROW row;
+	//MYSQL_STMT stmt;
+	//MYSQL_BIND param[3], result[3];
 
 	/*
 	 *	REPLACE WITH HIS INFOMATIONS
@@ -256,17 +254,17 @@ void sendData()
 	 *	pass = hwr_e_14
 	 *	database = hwr2014e_db
 	 */	
-	char *server = "localhost";
-	char *user = "hwr";
-	char *pass = "12345678";
-	char *database = "hardware";
+	//char *server = "localhost";
+	//char *user = "hwr";
+	//char *pass = "12345678";
+	//char *database = "hardware";
 	
 	//conn = mysql_init(NULL);
 	/* Connect to database */
 	//if (!mysql_real_connect(conn, server, user, pass, 
 	//			database, 0, NULL, 0))
 	//{
-	//	//fprintf(stderr, "%s\n", mysql_error(conn));
+	//	fprintf(stderr, "%s\n", mysql_error(conn));
 	//	exit(1);	
 	//}
 	char *insert = "INSERT INTO data (grp, sensor_name, sensor_value) VALUES(3, ";
@@ -274,33 +272,46 @@ void sendData()
 	int i = 0;
 	while( i < 5 )
 	{
-		sql = addParam(sql, insert, i);
+		sql = addMySQLParam(sql, insert, i);
 		i++;
 	}
-	printf("How query would look: \n%s", sql);
-	return;
-	printf("Something else\n");
-	if (mysql_query(conn, sql))
-	{
-		printf("Houston we have a problem");
-		fprintf(stderr, "%s\n", mysql_error(conn));
-		exit(1);
-	}
+	printf("How query would look: \n %s \n", sql);
+
+	char *cmd = "StoreToDb.py \'";
+
+	char odd = '\'';
+
+	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql) + 1));
+	strncpy(syscmd, cmd, strlen(cmd));
+	strncpy(syscmd + (int)strlen(syscmd), sql, strlen(sql));
+	strncpy(syscmd + (int)strlen(syscmd), &odd, 1);
+
+	printf("Calling mysql script!\n");
+	system(syscmd);
+
+	printf("data sent to database\n");
+	free(syscmd);
+	printf("Freeing pointer");
+	//if (mysql_query(conn, sql))
+	//{
+	//	printf("Houston we have a problem");
+	//	fprintf(stderr, "%s\n", mysql_error(conn));
+	//	exit(1);
+	//}
 
 	/* closing connection */
-	mysql_free_result(res);
-	mysql_close(conn);
+	//mysql_free_result(res);
+	//mysql_close(conn);
 
-	printf("Sending data to mysql server!\n");
 }
 
-char *addParam(char *sql, char *stub, int i)
+char *addMySQLParam(char *sql, char *stub, int i)
 {
 	printf("AddParam");
 	strncpy(sql + (int)strlen(sql), stub, strlen(stub));
 	printf("done");
 	char *sensor_name = malloc(sizeof(char) * 35);
-	sensor_name = getValues(i, sensor_name);
+	sensor_name = getMySQLValues(i, sensor_name);
 	strncpy(sql + strlen(sql), sensor_name, 35);
 	printf("Freeing sensor_name\n");
 
@@ -309,7 +320,7 @@ char *addParam(char *sql, char *stub, int i)
 	return sql;	
 }
 
-char *getValues(int i, char *ptr)
+char *getMySQLValues(int i, char *ptr)
 {
 	char comma = ',';
 	char odd = '\'';

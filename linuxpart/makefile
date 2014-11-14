@@ -3,6 +3,11 @@ CFLAGS=-xc
 OFLAGS=-lm
 SRC=src/
 BIN=bin/
+DEPLOYBIN=/usr/bin/
+#INCLUDES=/usr/include/mysql
+#MYSQLCFLAGS=mysql_config --cflags
+#MYSQLLIBS=mysql_config --libs
+
 
 buildclient: $(SRC)client.c
 	$(CC) $(CFLAGS) $(SRC)client.c -o $(BIN)client
@@ -10,7 +15,21 @@ buildclient: $(SRC)client.c
 buildserver: $(SRC)server.c
 	$(CC) $(CFLAGS) $(SRC)server.c $(OFLAGS) -o $(BIN)server
 
-build: buildserver buildclient
+buildpython: $(SRC)StoreToDb.py
+	cp $(SRC)StoreToDb.py $(BIN)StoreToDb.py
+
+build: buildpython buildserver buildclient
+
+deployclient: $(SRC)client.c
+	$(CC) $(CFLAGS) $(SRC)client.c -o $(DEPLOYBIN)hwserver
+
+deployserver: $(SRC)server.c
+	$(CC) $(CFLAGS) $(SRC)server.c $(OFLAGS) -o $(DEPLOYBIN)hwserver
+
+deploypython: $(SRC)StoreToDb.py
+	cp $(SRC)StoreToDb.py $(DEPLOYBIN)StoreToDb.py
+
+deploy: deploypython deployclient deployserver
 
 clean:
 	cd $(BIN) && rm server client && cd ..
