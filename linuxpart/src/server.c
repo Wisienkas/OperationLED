@@ -268,7 +268,7 @@ void sendData()
 	//	exit(1);	
 	//}
 	char *insert = "INSERT INTO sensors (group_no, sensor_name, sensor_data) VALUES(3, ";
-	char *sql = malloc(sizeof(char) * 500);
+	char *sql = malloc(sizeof(char) * 1000);
 	int i = 0;
 	while( i < 5 )
 	{
@@ -279,12 +279,12 @@ void sendData()
 
 	char *cmd = "python /usr/bin/StoreToDb.py \"";
 
-	char odd = '\"';
+	char *odd = "--\"";
 
 	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql) + 1));
 	strncpy(syscmd, cmd, strlen(cmd));
 	strncpy(syscmd + (int)strlen(syscmd), sql, strlen(sql));
-	strncpy(syscmd + (int)strlen(syscmd), &odd, 1);
+	strncpy(syscmd + (int)strlen(syscmd), odd, strlen(odd));
 
 	printf("Calling mysql script!\n");
 	printf("Script: %s \n", syscmd);
