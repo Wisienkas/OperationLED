@@ -277,7 +277,7 @@ void sendData()
 	}
 	printf("How query would look: \n %s \n", sql);
 
-	char *cmd = "python usr/bin/StoreToDb.py \"";
+	char *cmd = "python /usr/bin/StoreToDb.py \"";
 
 	char odd = '\"';
 

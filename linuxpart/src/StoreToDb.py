@@ -2,7 +2,7 @@
 # Stores a collection of sensor inputs to a MySQL database
 # Input: int group_no, string sensor_name, data
 import mysql.connector
-#from sys import argv
+from sys import argv
 #from datetime import datetime
 try:
     cnx = mysql.connector.connect(user='hwr',
