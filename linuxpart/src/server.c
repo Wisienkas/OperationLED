@@ -1,19 +1,28 @@
+// General libraries
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
+
+// Socket libraries
 #include <unistd.h>
 #include <errno.h>
-#include <string.h>
-#include <x86_64-linux-gnu/sys/socket.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <x86_64-linux-gnu/sys/types.h>
+#include <sys/types.h>
 #include <netdb.h>
 
+// Database
+#include <mysql/mysql.h>
+
+/* Constants */
+#define STRING_SIZE 35
 #define PORT 8888
 #define BACKLOG 10
 #define MAXSIZE 1024
 
+/* Structs */
 struct values 
 {
 	float min;
@@ -22,6 +31,7 @@ struct values
 	float sd;
 };
 
+/* global variables */
 struct values results[5];
 int r_index = 0;
 
@@ -36,6 +46,11 @@ char buffer[MAXSIZE];
 
 int yes = 1;
 
+MYSQL mysql;
+
+/* Function declarations */
+char *getValues(int i, char *ptr);
+char *addParam(char *sql, char *stub, int i);
 char *substring(char *str, int start, int length);
 void setup();
 void loop();
@@ -159,7 +174,7 @@ void addData()
 	results[r_index].min = getMin(ptr, n);
 	results[r_index].max = getMax(ptr, n);
 
-	free(ptr);
+	//printf("Freeing ptr addData()\n");
 
 	if(r_index == 4)
 	{
@@ -228,18 +243,97 @@ float * getNumbers(float * ptr){
 
 void sendData()
 {
+	MYSQL *conn;
+	MYSQL_RES *res;
+	MYSQL_ROW row;
+	MYSQL_STMT stmt;
+	MYSQL_BIND param[3], result[3];
+
+	/*
+	 *	REPLACE WITH HIS INFOMATIONS
+	 *	server = jclarsen.dk
+	 *	user = hwr
+	 *	pass = hwr_e_14
+	 *	database = hwr2014e_db
+	 */	
+	char *server = "localhost";
+	char *user = "hwr";
+	char *pass = "12345678";
+	char *database = "hardware";
+	
+	//conn = mysql_init(NULL);
+	/* Connect to database */
+	//if (!mysql_real_connect(conn, server, user, pass, 
+	//			database, 0, NULL, 0))
+	//{
+	//	//fprintf(stderr, "%s\n", mysql_error(conn));
+	//	exit(1);	
+	//}
+	char *insert = "INSERT INTO data (grp, sensor_name, sensor_value) VALUES(3, ";
+	char *sql = malloc(sizeof(char) * 500);
 	int i = 0;
-	while ( i < 5 )
+	while( i < 5 )
 	{
-		printf("Result %d had following results!\n", i);
-		printf("Mean value: %f \n", results[i].mean);
-		printf("SD value: %f \n", results[i].sd);
-		printf("Max value: %f \n", results[i].max);
-		printf("Min value: %f \n", results[i].min);
+		sql = addParam(sql, insert, i);
 		i++;
 	}
+	printf("How query would look: \n%s", sql);
+	return;
+	printf("Something else\n");
+	if (mysql_query(conn, sql))
+	{
+		printf("Houston we have a problem");
+		fprintf(stderr, "%s\n", mysql_error(conn));
+		exit(1);
+	}
+
+	/* closing connection */
+	mysql_free_result(res);
+	mysql_close(conn);
+
 	printf("Sending data to mysql server!\n");
-	
+}
+
+char *addParam(char *sql, char *stub, int i)
+{
+	printf("AddParam");
+	strncpy(sql + (int)strlen(sql), stub, strlen(stub));
+	printf("done");
+	char *sensor_name = malloc(sizeof(char) * 35);
+	sensor_name = getValues(i, sensor_name);
+	strncpy(sql + strlen(sql), sensor_name, 35);
+	printf("Freeing sensor_name\n");
+
+	strncpy(sql + strlen(sql), ");\n", 3);
+
+	return sql;	
+}
+
+char *getValues(int i, char *ptr)
+{
+	char comma = ',';
+	char odd = '\'';
+	char holder[7];
+	memset(holder, '\0', sizeof(holder));
+
+	strncpy(ptr + (int)strlen(ptr), &odd, 1);
+	snprintf(holder, 7, "%f", results[i].mean);
+	strncpy(ptr + (int)strlen(ptr), holder, 7);
+	strncpy(ptr + (int)strlen(ptr), &comma, 1);
+	snprintf(holder, 7, "%f", results[i].sd);
+	strncpy(ptr + (int)strlen(ptr), holder, 7);
+	strncpy(ptr + (int)strlen(ptr), &comma, 1);
+	snprintf(holder, 7, "%f", results[i].max);
+	strncpy(ptr + (int)strlen(ptr), holder, 7);
+	strncpy(ptr + (int)strlen(ptr), &comma, 1);
+	snprintf(holder, 7, "%f", results[i].min);
+	strncpy(ptr + (int)strlen(ptr), holder, 7);
+	strncpy(ptr + (int)strlen(ptr), &odd, 1);
+	strncpy(ptr + (int)strlen(ptr), &comma, 1);
+	snprintf(holder, 7, "%f", results[i].mean);
+	strncpy(ptr + (int)strlen(ptr), holder, 7);
+
+	return ptr;
 }
 
 float getMean(float *num, int n)
