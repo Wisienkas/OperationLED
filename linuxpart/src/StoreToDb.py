@@ -22,13 +22,18 @@ except mysql.connector.Error as err:
     print("Other error")
     print(err)
 else:
-    print("Received following query");
+    print("Received following query")
 
     sql = "INSERT INTO sensors (time, group_no, sensor_name, sensor_data) VALUES(?, ?, ?, ?);"
-    curser = cnx.cursor();
+    curser = cnx.cursor()
     
-    for i in range(0, 5)
-        data_sensor( datetime.now(), 3, argv[3 * i + 1], argv[3 * i + 2])
+
+    for i in range(0, 5):
+        data_sensor = list();
+        data_sensor.append(datetime.now());
+        data_sensor.append(3);
+        data_sensor.append(argv[3 * i + 1);
+        data_sensor.append(argv[3 * i + 2);
         curser.execute(sql, data_sensor, multi = True)
-        cnx.commit();
-    cnx.close();
+        cnx.commit()
+    cnx.close()
