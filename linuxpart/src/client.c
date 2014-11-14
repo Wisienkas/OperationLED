@@ -1,7 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
-#include<x86_64-linux-gnu/sys/socket.h>
-#include<x86_64-linux-gnu/sys/types.h>
+#include<sys/socket.h>
+#include<sys/types.h>
 #include<netinet/in.h>
 #include<string.h>
 
