@@ -2,7 +2,7 @@
 #include <String.h>
 
 // Analog pin the microphone uses
-const int SENSOR_PIN = A0;
+const int SENSOR_PIN = A3;
 
 // Number of LED's that are used
 const int LED_COUNT = 16;
