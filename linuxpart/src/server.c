@@ -48,7 +48,7 @@ int yes = 1;
 
 /* Function declarations */
 char *getMySQLValues(int i, char *ptr);
-char *addMySQLParam(char *sql, char *stub, int i);
+char *addMySQLParam(char *sql, int i);
 char *substring(char *str, int start, int length);
 void setup();
 void loop();
@@ -267,24 +267,20 @@ void sendData()
 	//	fprintf(stderr, "%s\n", mysql_error(conn));
 	//	exit(1);	
 	//}
-	char *insert = "INSERT INTO sensors (group_no, sensor_name, sensor_data) VALUES(3, ";
 	char *sql = malloc(sizeof(char) * 1000);
 	int i = 0;
 	while( i < 5 )
 	{
-		sql = addMySQLParam(sql, insert, i);
+		sql = addMySQLParam(sql, i);
 		i++;
 	}
 	printf("How query would look: \n %s \n", sql);
 
-	char *cmd = "python /usr/bin/StoreToDb.py \"";
+	char *cmd = "python /usr/bin/StoreToDb.py ";
 
-	char *odd = "--\"";
-
-	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql) + 1));
+	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql)));
 	strncpy(syscmd, cmd, strlen(cmd));
 	strncpy(syscmd + (int)strlen(syscmd), sql, strlen(sql));
-	strncpy(syscmd + (int)strlen(syscmd), odd, strlen(odd));
 
 	printf("Calling mysql script!\n");
 	printf("Script: %s \n", syscmd);
@@ -306,17 +302,13 @@ void sendData()
 
 }
 
-char *addMySQLParam(char *sql, char *stub, int i)
+char *addMySQLParam(char *sql, int i)
 {
-	printf("AddParam");
-	strncpy(sql + (int)strlen(sql), stub, strlen(stub));
 	printf("done");
 	char *sensor_name = malloc(sizeof(char) * 35);
 	sensor_name = getMySQLValues(i, sensor_name);
 	strncpy(sql + strlen(sql), sensor_name, 35);
 	printf("Freeing sensor_name\n");
-
-	strncpy(sql + strlen(sql), ");\n", 3);
 
 	return sql;	
 }
@@ -325,9 +317,11 @@ char *getMySQLValues(int i, char *ptr)
 {
 	char comma = ',';
 	char odd = '\'';
+	char space = ' ';
 	char holder[7];
 	memset(holder, '\0', sizeof(holder));
 
+	// Getting all values
 	strncpy(ptr + (int)strlen(ptr), &odd, 1);
 	snprintf(holder, 7, "%f", results[i].mean);
 	strncpy(ptr + (int)strlen(ptr), holder, 7);
@@ -341,9 +335,11 @@ char *getMySQLValues(int i, char *ptr)
 	snprintf(holder, 7, "%f", results[i].min);
 	strncpy(ptr + (int)strlen(ptr), holder, 7);
 	strncpy(ptr + (int)strlen(ptr), &odd, 1);
-	strncpy(ptr + (int)strlen(ptr), &comma, 1);
+	strncpy(ptr + (int)strlen(ptr), &space, 1);
+	// setting data
 	snprintf(holder, 7, "%f", results[i].mean);
 	strncpy(ptr + (int)strlen(ptr), holder, 7);
+	strncpy(ptr + (int)strlen(ptr), &space, 1);
 
 	return ptr;
 }

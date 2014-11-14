@@ -3,7 +3,7 @@
 # Input: int group_no, string sensor_name, data
 import mysql.connector
 from sys import argv
-#from datetime import datetime
+from datetime import datetime
 try:
     cnx = mysql.connector.connect(user='hwr',
         		      password='hwr_e_14',
@@ -23,14 +23,12 @@ except mysql.connector.Error as err:
     print(err)
 else:
     print("Received following query");
-    print(argv[1]);
+
+    sql = "INSERT INTO sensors (time, group_no, sensor_name, sensor_data) VALUES(?, ?, ?, ?);"
     curser = cnx.cursor();
-
-    query = argv[1]
-
-    curser.execute(query, multi = True);
-    #print("inserting ", argv[1], argv[2], argv[3])
-    #data_sensor = ( datetime.now(), int(argv[1]), str(argv[2]), float(argv[3])) 
-    #curser.execute(add_sensor_val, data_sensor)
-    cnx.commit();
+    
+    for i in range(0, 5)
+        data_sensor( datetime.now(), 3, argv[3 * i + 1], argv[3 * i + 2])
+        curser.execute(sql, data_sensor, multi = True)
+        cnx.commit();
     cnx.close();
