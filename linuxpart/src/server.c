@@ -267,7 +267,7 @@ void sendData()
 	//	fprintf(stderr, "%s\n", mysql_error(conn));
 	//	exit(1);	
 	//}
-	char *insert = "INSERT INTO sensors (group_no, sensor_name, sensor_value) VALUES(3, ";
+	char *insert = "INSERT INTO sensors (group_no, sensor_name, sensor_data) VALUES(3, ";
 	char *sql = malloc(sizeof(char) * 500);
 	int i = 0;
 	while( i < 5 )

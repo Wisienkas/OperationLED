@@ -28,7 +28,7 @@ else:
 
     query = argv[1]
 
-    curser.execute(query);
+    curser.execute(query, multi = True);
     #print("inserting ", argv[1], argv[2], argv[3])
     #data_sensor = ( datetime.now(), int(argv[1]), str(argv[2]), float(argv[3])) 
     #curser.execute(add_sensor_val, data_sensor)
