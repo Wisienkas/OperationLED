@@ -2,7 +2,7 @@
 #include <String.h>
 
 // Analog pin the microphone uses
-const int SENSOR_PIN = A0;
+const int SENSOR_PIN = A3;
 
 // Number of LED's that are used
 const int LED_COUNT = 16;
@@ -48,7 +48,7 @@ void setup()
   
   // run the local server asynchronously
   Process pServer;
-  pServer.begin("soundserver");
+  pServer.begin("/usr/bin/hwserver");
   pServer.runAsynchronously();
   
   lastMillis = millis();
@@ -74,7 +74,7 @@ void loop()
     // if the process is already running, this skips it in this case and resets the buffer
     if (pClient.running() == false)
     {
-      pClient.begin("soundAssign");
+      pClient.begin("/usr/bin/hwclient");
       
       for (int i = 0; i < bufferIndex; i++)
       {
