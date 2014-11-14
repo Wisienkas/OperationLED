@@ -277,7 +277,7 @@ void sendData()
 	}
 	printf("How query would look: \n %s \n", sql);
 
-	char *cmd = "python StoreToDb.py \"";
+	char *cmd = "python usr/bin/StoreToDb.py \"";
 
 	char odd = '\"';
 
@@ -287,6 +287,7 @@ void sendData()
 	strncpy(syscmd + (int)strlen(syscmd), &odd, 1);
 
 	printf("Calling mysql script!\n");
+	printf("Script: %s \n", syscmd);
 	system(syscmd);
 
 	printf("data sent to database\n");
