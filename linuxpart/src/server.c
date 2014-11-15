@@ -305,8 +305,10 @@ void sendData()
 char *addMySQLParam(char *sql, int i)
 {
 	printf("done");
-	char *sensor_name = malloc(sizeof(char) * 35);
+	char *space = " ";
+	char *sensor_name = malloc(sizeof(char) * 36);
 	sensor_name = getMySQLValues(i, sensor_name);
+	strncpy(sql + strlen(sql), space, 1);
 	strncpy(sql + strlen(sql), sensor_name, 35);
 	printf("Freeing sensor_name\n");
 
