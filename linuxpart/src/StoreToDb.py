@@ -24,16 +24,20 @@ except mysql.connector.Error as err:
 else:
     print("Received following query")
 
-    sql = "INSERT INTO sensors (time, group_no, sensor_name, sensor_data) VALUES(?, ?, ?, ?);"
+    sql = "INSERT INTO sensors (date_time, group_no, sensor_name, sensor_data) VALUES(%s, %s, %s, %s);"
     curser = cnx.cursor()
-    
 
-    for i in range(0, 5):
-        data_sensor = list();
-        data_sensor.append(datetime.now());
-        data_sensor.append(3);
-        data_sensor.append(argv[3 * i + 1);
-        data_sensor.append(argv[3 * i + 2);
-        curser.execute(sql, data_sensor, multi = True)
-        cnx.commit()
+    j = 1; # first index with useable data
+    dataRange = (len(argv) - 1)/2 # amount of useable data
+    
+    for i in range(0, dataRange):
+        data_sensor = list()
+        data_sensor.append(datetime.now())
+        data_sensor.append(3)
+        data_sensor.append(argv[j + i])
+        data_sensor.append(argv[j + i + 1])
+        curser.execute(sql, data_sensor)
+        j += 1
+    
+    cnx.commit()
     cnx.close()
