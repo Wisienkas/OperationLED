@@ -73,13 +73,13 @@ void setup()
 {
 	if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		fprintf(stderr, "Socket Failure");
+		fprintf(stderr, "Socket Failure\n");
 		exit(1);
 	}
 
 	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
 	{
-		perror("setsockopt");
+		perror("setsockopt\n");
 		exit(1);
 	}
 
@@ -172,6 +172,7 @@ void addData()
 	results[r_index].min = getMin(ptr, n);
 	results[r_index].max = getMax(ptr, n);
 
+	printf("r_index: %d\n", r_index);
 	//printf("Freeing ptr addData()\n");
 
 	if(r_index == 4)
@@ -275,7 +276,7 @@ void sendData()
 		sql = addMySQLParam(sql, i);
 		i++;
 	}
-	printf("How query would look: \n %s \n", sql);
+	printf("How query would look: \n%s \n", sql);
 
 	//char *cmd = "python /usr/bin/StoreToDb.py";
 	char *cmd = "python StoreToDb.py ";
@@ -284,14 +285,13 @@ void sendData()
 	strncpy(syscmd, cmd, strlen(cmd));
 	strncpy(syscmd + (int)strlen(syscmd), sql, strlen(sql));
 
-	printf("Calling mysql script!\n");
-	printf("Script: %s \n", syscmd);
+	printf("Calling python script!\n");
+	printf("%s\n", syscmd);
 	system(syscmd);
 
 	printf("data sent to database\n");
-	free(sql);
 	free(syscmd);
-	printf("Freeing pointer");
+	printf("Freeing pointer\n");
 	//if (mysql_query(conn, sql))
 	//{
 	//	printf("Houston we have a problem");
@@ -307,7 +307,7 @@ void sendData()
 
 char *addMySQLParam(char *sql, int i)
 {
-	printf("done");
+	printf("addMySQLParam\n");
 	char *space = " ";
 	char *sensor_name = malloc(sizeof(char) * 45);
 	sensor_name = getMySQLValues(i, sensor_name);
