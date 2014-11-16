@@ -178,6 +178,7 @@ void addData()
 	{
 		sendData();
 		r_index = 0;
+		memset(results, 0, sizeof(results));
 	} else {
 		r_index++;
 	}
@@ -276,7 +277,8 @@ void sendData()
 	}
 	printf("How query would look: \n %s \n", sql);
 
-	char *cmd = "python /usr/bin/StoreToDb.py ";
+	char *cmd = "python /usr/bin/StoreToDb.py";
+	//char *cmd = "python /usr/bin/StoreToDb.py";
 
 	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql)));
 	strncpy(syscmd, cmd, strlen(cmd));
@@ -287,6 +289,7 @@ void sendData()
 	system(syscmd);
 
 	printf("data sent to database\n");
+	free(sql);
 	free(syscmd);
 	printf("Freeing pointer");
 	//if (mysql_query(conn, sql))
@@ -306,10 +309,10 @@ char *addMySQLParam(char *sql, int i)
 {
 	printf("done");
 	char *space = " ";
-	char *sensor_name = malloc(sizeof(char) * 36);
+	char *sensor_name = malloc(sizeof(char) * 45);
 	sensor_name = getMySQLValues(i, sensor_name);
 	strncpy(sql + strlen(sql), space, 1);
-	strncpy(sql + strlen(sql), sensor_name, 35);
+	strncpy(sql + strlen(sql), sensor_name, 45);
 	printf("Freeing sensor_name\n");
 
 	return sql;	
