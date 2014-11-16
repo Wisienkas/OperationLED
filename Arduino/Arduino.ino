@@ -38,6 +38,7 @@ float buffer[BUFFER_SIZE];
 long lastMillis = 0;
 long lastWhole = 0;
 
+// it is assumed that a server process is running already 
 // this is reused across runs
 Process pClient;
 
@@ -45,11 +46,6 @@ void setup()
 {
   Bridge.begin();
   Serial.begin(9600);
-  
-  // run the local server asynchronously
-  Process pServer;
-  pServer.begin("/usr/bin/hwserver");
-  pServer.runAsynchronously();
   
   lastMillis = millis();
 }
@@ -71,9 +67,14 @@ void loop()
   {
     lastWhole = millis() - lastMillis;
     
+    bool clientRunning = pClient.running();
+    
+    Serial.print("Client running: ");
+    Serial.println(clientRunning == true ? "true" : "false");
+    
     // if the process is already running, this skips it in this case and resets the buffer
-    if (pClient.running() == false)
-    {
+    if (clientRunning == false)
+    {      
       pClient.begin("/usr/bin/hwclient");
       
       for (int i = 0; i < bufferIndex; i++)
