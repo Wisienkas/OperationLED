@@ -241,6 +241,8 @@ float * getNumbers(float * ptr){
 	return ptr;
 }
 
+const char *cmd = "python /usr/bin/StoreToDb.py";
+
 void sendData()
 {
 	//MYSQL *conn;
@@ -277,14 +279,11 @@ void sendData()
 		i++;
 	}
 	printf("How query would look: \n%s \n", sql);
-
-	//char *cmd = "python /usr/bin/StoreToDb.py";
-	char *cmd = "python StoreToDb.py ";
-
-	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql)) + 1);
-	strncpy(syscmd, cmd, strlen(cmd));
-	strncpy(syscmd + (int)strlen(syscmd), sql, strlen(sql));
-
+	
+	char *syscmd = malloc(sizeof(char) * (1 + strlen(cmd) + strlen(sql)));
+	strcat(syscmd, strdup(cmd));
+	strcat(syscmd, sql);
+	
 	printf("Calling python script!\n");
 	printf("%s\n", syscmd);
 	system(syscmd);
@@ -308,44 +307,39 @@ void sendData()
 char *addMySQLParam(char *sql, int i)
 {
 	printf("addMySQLParam\n");
-	char *space = " ";
-	char *sensor_name = malloc(sizeof(char) * 45);
-	sensor_name = getMySQLValues(i, sensor_name);
-	//strncpy(sql + strlen(sql), space, 1);
-	strncpy(sql + strlen(sql), sensor_name, 45);
-	printf("Freeing sensor_name\n");
-
-	return sql;	
+	char *sensor_name = calloc(1 + 45, sizeof(char));
+	return strcat(sql, getMySQLValues(i, sensor_name));;
 }
+
+#define VALUES_F_COUNT 5
+#define VALUES_F_PRECISION 6
+
+const int F_COUNT = VALUES_F_COUNT;
+const int F_PRECISION = VALUES_F_PRECISION;
+const int F_BUFFERSIZE = VALUES_F_PRECISION + 1;
+const int VALUES_BUFFERSIZE = sizeof(char) * (7 + VALUES_F_PRECISION * VALUES_F_COUNT + 1);
+const char *parameter_format = " '%s,%s,%s,%s' %s";
 
 char *getMySQLValues(int i, char *ptr)
 {
-	char comma = ',';
-	char odd = '\'';
-	char space = ' ';
-	char holder[7];
-	memset(holder, '\0', sizeof(holder));
-
-	// Getting all values
-	strncpy(ptr + (int)strlen(ptr), &odd, 1);
-	snprintf(holder, 7, "%f", results[i].mean);
-	strncpy(ptr + (int)strlen(ptr), holder, 7);
-	strncpy(ptr + (int)strlen(ptr), &comma, 1);
-	snprintf(holder, 7, "%f", results[i].sd);
-	strncpy(ptr + (int)strlen(ptr), holder, 7);
-	strncpy(ptr + (int)strlen(ptr), &comma, 1);
-	snprintf(holder, 7, "%f", results[i].max);
-	strncpy(ptr + (int)strlen(ptr), holder, 7);
-	strncpy(ptr + (int)strlen(ptr), &comma, 1);
-	snprintf(holder, 7, "%f", results[i].min);
-	strncpy(ptr + (int)strlen(ptr), holder, 7);
-	strncpy(ptr + (int)strlen(ptr), &odd, 1);
-	strncpy(ptr + (int)strlen(ptr), &space, 1);
-	// setting data
-	snprintf(holder, 7, "%f", results[i].mean);
-	strncpy(ptr + (int)strlen(ptr), holder, 7);
-	strncpy(ptr + (int)strlen(ptr), &space, 1);
-
+	char buffers[F_COUNT][F_PRECISION];
+	memset(buffers, 0, sizeof(buffers));
+	
+	char values[VALUES_BUFFERSIZE];
+	memset(values, 0, sizeof(values));
+	
+	snprintf(buffers[0], F_PRECISION, "%f", results[i].mean);
+	snprintf(buffers[1], F_PRECISION, "%f", results[i].sd);
+	snprintf(buffers[2], F_PRECISION, "%f", results[i].max);
+	snprintf(buffers[3], F_PRECISION, "%f", results[i].min);
+  
+	if(snprintf(values, VALUES_BUFFERSIZE, parameter_format, buffers[0], buffers[1], buffers[2], buffers[3], buffers[0]) >= VALUES_BUFFERSIZE)
+	{
+	  printf("Buffer overflow in getMySQLValues");
+	}
+	
+	strcat(ptr, values);
+	
 	return ptr;
 }
 
