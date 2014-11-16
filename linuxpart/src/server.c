@@ -277,10 +277,10 @@ void sendData()
 	}
 	printf("How query would look: \n %s \n", sql);
 
-	char *cmd = "python /usr/bin/StoreToDb.py";
 	//char *cmd = "python /usr/bin/StoreToDb.py";
+	char *cmd = "python StoreToDb.py ";
 
-	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql)));
+	char *syscmd = malloc(sizeof(char) * (strlen(cmd) + strlen(sql)) + 1);
 	strncpy(syscmd, cmd, strlen(cmd));
 	strncpy(syscmd + (int)strlen(syscmd), sql, strlen(sql));
 
@@ -311,7 +311,7 @@ char *addMySQLParam(char *sql, int i)
 	char *space = " ";
 	char *sensor_name = malloc(sizeof(char) * 45);
 	sensor_name = getMySQLValues(i, sensor_name);
-	strncpy(sql + strlen(sql), space, 1);
+	//strncpy(sql + strlen(sql), space, 1);
 	strncpy(sql + strlen(sql), sensor_name, 45);
 	printf("Freeing sensor_name\n");
 
