@@ -300,9 +300,12 @@ char *getMySQLValues(int i, char *ptr)
 	if(snprintf(values, VALUES_BUFFERSIZE, parameter_format, buffers[0], buffers[1], buffers[2], buffers[3], buffers[0]) >= VALUES_BUFFERSIZE)
 	{
 	  printf("Buffer overflow in getMySQLValues");
+	} 
+	else 
+	{
+		strcat(ptr, values);
 	}
 	
-	strcat(ptr, values);
 	
 	return ptr;
 }
