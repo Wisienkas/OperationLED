@@ -21,6 +21,9 @@
 #define PORT 8888
 #define BACKLOG 10
 #define MAXSIZE 1024
+#define END_OF_LINE_CHAR 1
+#define RESULT_SIZE 20
+#define SENSOR_NAME_SIZE 45
 
 /* Structs */
 struct values 
@@ -32,7 +35,7 @@ struct values
 };
 
 /* global variables */
-struct values results[5];
+struct values results[RESULT_SIZE];
 int r_index = 0;
 
 int client_fd, socket_fd, num;
@@ -129,21 +132,12 @@ void loop()
 			buffer[num] = '\0';
 			addData();
 			printf("Server: Message Received %s\n", buffer);
-			
-			// Part to send to client
-			//if ((send(client_fd, buffer, strlen(buffer), 0)) == -1)
-			//{
-			//	fprintf(stderr, "Failure Sending message\n");
-			//	close(client_fd);
-			//	break;
-			//}
-
-			//printf("Server: Message being sent: %s\nNumber of bytes sent: %lu\n",
-			//		buffer, sizeof(buffer));
 		}
 		close(client_fd);
 	}
 }
+
+#define AFTER_LAST_COMMA 1
 
 int countNumbers()
 {
@@ -157,8 +151,12 @@ int countNumbers()
 		}
 		j++;
 	}
-	return i + 1;
+	return i + AFTER_LAST_COMMA;
 }
+
+#define FIRST_RESULT_INDEX 0
+
+const int MAX_RESULT_INDEX = RESULT_SIZE - 1;
 
 void addData()
 {
@@ -173,12 +171,11 @@ void addData()
 	results[r_index].max = getMax(ptr, n);
 
 	printf("r_index: %d\n", r_index);
-	//printf("Freeing ptr addData()\n");
 
-	if(r_index == 4)
+	if(r_index == MAX_RESULT_INDEX)
 	{
 		sendData();
-		r_index = 0;
+		r_index = FIRST_RESULT_INDEX;
 		memset(results, 0, sizeof(results));
 	} else {
 		r_index++;
@@ -187,7 +184,7 @@ void addData()
 
 char *substring(char *str, int start, int length)
 {
-	char *ptr = malloc(length + 1);
+	char *ptr = malloc(length + END_OF_LINE_CHAR);
 	int c = 0;
 
 	if(ptr == NULL)
@@ -243,35 +240,11 @@ float * getNumbers(float * ptr){
 
 const char *cmd = "python /usr/bin/StoreToDb.py";
 
+const int MAX_SQL_QUERY_SIZE = (SENSOR_NAME_SIZE + END_OF_LINE_CHAR) * RESULT_SIZE;
+
 void sendData()
 {
-	//MYSQL *conn;
-	//MYSQL_RES *res;
-	//MYSQL_ROW row;
-	//MYSQL_STMT stmt;
-	//MYSQL_BIND param[3], result[3];
-
-	/*
-	 *	REPLACE WITH HIS INFOMATIONS
-	 *	server = jclarsen.dk
-	 *	user = hwr
-	 *	pass = hwr_e_14
-	 *	database = hwr2014e_db
-	 */	
-	//char *server = "localhost";
-	//char *user = "hwr";
-	//char *pass = "12345678";
-	//char *database = "hardware";
-	
-	//conn = mysql_init(NULL);
-	/* Connect to database */
-	//if (!mysql_real_connect(conn, server, user, pass, 
-	//			database, 0, NULL, 0))
-	//{
-	//	fprintf(stderr, "%s\n", mysql_error(conn));
-	//	exit(1);	
-	//}
-	char *sql = malloc(sizeof(char) * 1000);
+	char *sql = calloc(MAX_SQL_QUERY_SIZE, sizeof(char));
 	int i = 0;
 	while( i < 5 )
 	{
@@ -280,7 +253,7 @@ void sendData()
 	}
 	printf("How query would look: \n%s \n", sql);
 	
-	char *syscmd = malloc(sizeof(char) * (1 + strlen(cmd) + strlen(sql)));
+	char *syscmd = calloc((END_OF_LINE_CHAR + strlen(cmd) + strlen(sql)), sizeof(char));
 	strcat(syscmd, strdup(cmd));
 	strcat(syscmd, sql);
 	
@@ -291,30 +264,19 @@ void sendData()
 	printf("data sent to database\n");
 	free(syscmd);
 	printf("Freeing pointer\n");
-	//if (mysql_query(conn, sql))
-	//{
-	//	printf("Houston we have a problem");
-	//	fprintf(stderr, "%s\n", mysql_error(conn));
-	//	exit(1);
-	//}
-
-	/* closing connection */
-	//mysql_free_result(res);
-	//mysql_close(conn);
-
 }
+
 
 char *addMySQLParam(char *sql, int i)
 {
 	printf("addMySQLParam\n");
-	char *sensor_name = calloc(1 + 45, sizeof(char));
+	char *sensor_name = calloc(END_OF_LINE_CHAR + SENSOR_NAME_SIZE, sizeof(char));
 	return strcat(sql, getMySQLValues(i, sensor_name));;
 }
 
 #define VALUES_F_COUNT 5
 #define VALUES_F_PRECISION 6
-#define SPECIAL_CHARS 7
-#define END_OF_LINE_CHAR 1
+#define SPECIAL_CHAR 7
 
 const int F_COUNT = VALUES_F_COUNT;
 const int F_PRECISION = VALUES_F_PRECISION;
