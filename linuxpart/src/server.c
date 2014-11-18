@@ -313,11 +313,13 @@ char *addMySQLParam(char *sql, int i)
 
 #define VALUES_F_COUNT 5
 #define VALUES_F_PRECISION 6
+#define SPECIAL_CHARS 7
+#define END_OF_LINE_CHAR 1
 
 const int F_COUNT = VALUES_F_COUNT;
 const int F_PRECISION = VALUES_F_PRECISION;
-const int F_BUFFERSIZE = VALUES_F_PRECISION + 1;
-const int VALUES_BUFFERSIZE = sizeof(char) * (7 + VALUES_F_PRECISION * VALUES_F_COUNT + 1);
+const int F_BUFFERSIZE = VALUES_F_PRECISION + END_OF_LINE_CHAR;
+const int VALUES_BUFFERSIZE = sizeof(char) * (SPECIAL_CHAR + VALUES_F_PRECISION * VALUES_F_COUNT + END_OF_LINE_CHAR);
 const char *parameter_format = " '%s,%s,%s,%s' %s";
 
 char *getMySQLValues(int i, char *ptr)
