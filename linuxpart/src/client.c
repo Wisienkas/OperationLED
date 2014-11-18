@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[])
 {
-	int clientSocket, num;
+	int clientSocket;
 	char buffer[MAXSIZE];
 	struct sockaddr_in serverAddr;
 	socklen_t addr_size;
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	addr_size = sizeof(serverAddr);
 	connect(clientSocket, (struct sockaddr *) &serverAddr, addr_size);
 
-	printf("Received arguments of size: %d\n", (int)sizeof(argv));			
+	printf("Received %d data points\n", argc - 1);
 	int i = 1;
 	int j = 0;
 	char comma = ',';
@@ -52,14 +52,17 @@ int main(int argc, char *argv[])
 		i++;
 	}
 	buffer[j] = '\0';
-	printf("the compact part is now: %s\n", buffer);
-	printf("strlen of comapct is now: %d\n", (int)strlen(buffer));
-	
+	printf("Buffered Elements: %s\n", buffer);
+	printf("Data points added to buffer\n");
+
+	printf("Sending Data points to Server\n");
 	if ((send(clientSocket, buffer, strlen(buffer),0)) == -1)
 	{
 		fprintf(stderr, "Failure sending message\n");
 		close(clientSocket);
 		exit(1);
+	} else {
+		printf("Succesfully send Data points to Server!\n");
 	}
 	close(clientSocket);
 	
