@@ -246,7 +246,7 @@ void sendData()
 {
 	char *sql = calloc(MAX_SQL_QUERY_SIZE, sizeof(char));
 	int i = 0;
-	while( i < 5 )
+	while( i < RESULT_SIZE )
 	{
 		sql = addMySQLParam(sql, i);
 		i++;
