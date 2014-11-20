@@ -5,10 +5,6 @@ OFLAGS=-lm
 SRC=src/
 BIN=bin/
 DEPLOYBIN=/usr/bin/
-#INCLUDES=/usr/include/mysql
-#MYSQLCFLAGS=mysql_config --cflags
-#MYSQLLIBS=mysql_config --libs
-
 
 buildclient: $(SRC)client.c
 	$(CC) $(CFLAGS) $(DFLAGS) $(SRC)client.c -o $(BIN)client

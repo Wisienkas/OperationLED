@@ -1,1 +1,0 @@
-gcc -o bin/server $(mysql_config --cflags) src/server.c $(mysql_config --libs)
