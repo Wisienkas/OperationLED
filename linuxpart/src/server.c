@@ -14,24 +14,28 @@
 #include <sys/types.h>
 #include <netdb.h>
 
-// Database
-//#include <mysql.h>
-
-/* Constants */
-#define STRING_SIZE 35
+/* Server defines*/
 #define PORT 8888
 #define BACKLOG 10
 #define MAXSIZE 1024
-#define END_OF_LINE_CHAR 1
+
+/* Collection data */
 #define RESULT_SIZE 20
+#define RESULT_FIRST_INDEX 0
+#define RESULT_MAX_INDEX RESULT_SIZE - 1
 
+/* String defines*/
+#define END_OF_LINE_CHAR 1
+#define AFTER_LAST_COMMA 1
+
+/* Parameter defines */
 // this will work until Sat, 20 Nov 2286 17:46:39 GMT
-#define VALUES_TIME_LENGTH 10
-#define VALUES_F_COUNT 5
-#define VALUES_F_PRECISION 6
-#define SPECIAL_CHARS 8
+#define UNIX_TIME_LENGTH 10
+#define PARAMETER_F_COUNT 5
+#define PARAMETER_F_PRECISION 6
+#define PARAMETER_SPECIAL_CHARS 8
 
-#define PARAMETER_BUFFERSIZE VALUES_TIME_LENGTH + SPECIAL_CHARS + VALUES_F_PRECISION * VALUES_F_COUNT + END_OF_LINE_CHAR
+#define PARAMETER_BUFFERSIZE UNIX_TIME_LENGTH + PARAMETER_SPECIAL_CHARS + PARAMETER_F_PRECISION * PARAMETER_F_COUNT + END_OF_LINE_CHAR
 
 /* Structs */
 struct values 
@@ -54,13 +58,13 @@ struct sockaddr_in dest;
 
 socklen_t size;
 
-char buffer[MAXSIZE];
+char server_buffer[MAXSIZE];
 
-int yes = 1;
+const int OPTION_ENABLED = 1;
 
 /* Function declarations */
-char *getMySQLValues(int i, char *ptr);
-char *addMySQLParam(char *sql, int i);
+char *getParameter(int i, char *ptr);
+char *addParameter(char *sql, int i);
 char *substring(char *str, int start, int length);
 void setup();
 void loop();
@@ -89,7 +93,7 @@ void setup()
 		exit(1);
 	}
 
-	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1)
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &OPTION_ENABLED, sizeof(int)) == -1)
 	{
 		perror("setsockopt\n");
 		exit(1);
@@ -129,7 +133,7 @@ void loop()
 
 		while(1) {
 
-			if ((num = recv(client_fd, buffer, MAXSIZE, 0)) == -1) 
+			if ((num = recv(client_fd, server_buffer, MAXSIZE, 0)) == -1) 
 			{
 				perror("recv");
 				exit(1);
@@ -138,23 +142,21 @@ void loop()
 				printf("Connection closed\n");
 				break;
 			}
-			buffer[num] = '\0';
+			server_buffer[num] = '\0';
 			addData();
-			printf("Server: Message Received %s\n", buffer);
+			printf("Server: Message Received %s\n", server_buffer);
 		}
 		close(client_fd);
 	}
 }
 
-#define AFTER_LAST_COMMA 1
-
 int countNumbers()
 {
 	int i = 0;
 	int j = 0;
-	while(buffer[j] != '\0')
+	while(server_buffer[j] != '\0')
 	{
-		if(buffer[j] == ',')
+		if(server_buffer[j] == ',')
 		{
 			i++;
 		}
@@ -162,10 +164,6 @@ int countNumbers()
 	}
 	return i + AFTER_LAST_COMMA;
 }
-
-#define FIRST_RESULT_INDEX 0
-
-const int MAX_RESULT_INDEX = RESULT_SIZE - 1;
 
 void addData()
 {
@@ -180,12 +178,12 @@ void addData()
 	results[r_index].min = getMin(ptr, n);
 	results[r_index].max = getMax(ptr, n);
 
-	printf("r_index: %d\n", r_index);
+	printf("Data collected: %d of %d\n", r_index + 1, RESULT_MAX_INDEX + 1);
 
-	if(r_index == MAX_RESULT_INDEX)
+	if(r_index >= RESULT_MAX_INDEX)
 	{
 		sendData();
-		r_index = FIRST_RESULT_INDEX;
+		r_index = RESULT_FIRST_INDEX;
 		memset(results, 0, sizeof(results));
 	} else {
 		r_index++;
@@ -196,13 +194,7 @@ char *substring(char *str, int start, int length)
 {
 	char *ptr = malloc(length + END_OF_LINE_CHAR);
 	int c = 0;
-
-	if(ptr == NULL)
-	{
-		printf("Unable to allocate memory\n");
-		exit(1);
-	}
-
+	
 	while ( c < start ) 
 	{
 		str++;
@@ -213,7 +205,7 @@ char *substring(char *str, int start, int length)
 	while ( c < length ) 
 	{
 		*(ptr + c) = *str;
-		*str++;
+		str++;
 		c++;
 	}
 
@@ -229,11 +221,11 @@ float * getNumbers(float * ptr){
 	int start = 0;
 	int length = 0;
 	char *holder;
-	while(buffer[i] != '\0')
+	while(server_buffer[i] != '\0')
 	{
-		if(buffer[i] == ','){
+		if(server_buffer[i] == ','){
 			
-			holder = substring(buffer, start, length);
+			holder = substring(server_buffer, start, length);
 			ptr[n++] = (float)atoi(holder);
 			start = i + 1;
 			length = 0;
@@ -242,7 +234,7 @@ float * getNumbers(float * ptr){
 		}
 		i++;
 	}
-	holder = substring(buffer, start, length);
+	holder = substring(server_buffer, start, length);
 	ptr[n++] = (float)atoi(holder);
 
 	return ptr;
@@ -250,70 +242,63 @@ float * getNumbers(float * ptr){
 
 const char *cmd = "python /usr/bin/StoreToDb.py";
 
-const int MAX_SQL_QUERY_SIZE = PARAMETER_BUFFERSIZE * RESULT_SIZE + END_OF_LINE_CHAR;
+const int MAX_PARAMETER_SIZE = PARAMETER_BUFFERSIZE * RESULT_SIZE + END_OF_LINE_CHAR;
 
 void sendData()
 {
-	char *sql = calloc(MAX_SQL_QUERY_SIZE, sizeof(char));
+	char *ptrParameters = calloc(MAX_PARAMETER_SIZE, sizeof(char));
 	int i = 0;
 	while( i < RESULT_SIZE )
 	{
-		sql = addMySQLParam(sql, i);
+		ptrParameters = addParameter(ptrParameters, i);
 		i++;
 	}
-	printf("How query would look: \n%s \n", sql);
+	printf("Query: %s\n", ptrParameters);
 	
-	char *syscmd = calloc((END_OF_LINE_CHAR + strlen(cmd) + strlen(sql)), sizeof(char));
+	char *syscmd = calloc((END_OF_LINE_CHAR + strlen(cmd) + strlen(ptrParameters)), sizeof(char));
 	strcat(syscmd, strdup(cmd));
-	strcat(syscmd, sql);
+	strcat(syscmd, ptrParameters);
 	
-	printf("Calling python script!\n");
+	printf("Calling command\n");
 	printf("%s\n", syscmd);
 	system(syscmd);
 
-	printf("data sent to database\n");
+	printf("Command executed, data sent to database\n");
 	free(syscmd);
-	printf("Freeing pointer\n");
+	printf("Pointer has been set free\n");
 }
 
+const int F_COUNT = PARAMETER_F_COUNT;
+const int F_PRECISION = PARAMETER_F_PRECISION;
+const int F_BUFFERSIZE = PARAMETER_F_PRECISION + END_OF_LINE_CHAR;
+const int CHAR_PARAMETER_BUFFERSIZE = sizeof(char) * PARAMETER_BUFFERSIZE;
+const char *FORMAT_PARAMETER = " %d '%s,%s,%s,%s' %s";
 
-char *addMySQLParam(char *sql, int i)
+char *addParameter(char *ptrParameters, int i)
 {
-	printf("addMySQLParam\n");
-	char *sensor_name = calloc(PARAMETER_BUFFERSIZE + END_OF_LINE_CHAR, sizeof(char));
-	return strcat(sql, getMySQLValues(i, sensor_name));;
-}
-
-const int F_COUNT = VALUES_F_COUNT;
-const int F_PRECISION = VALUES_F_PRECISION;
-const int F_BUFFERSIZE = VALUES_F_PRECISION + END_OF_LINE_CHAR;
-const int VALUES_BUFFERSIZE = sizeof(char) * PARAMETER_BUFFERSIZE;
-const char *parameter_format = " %d '%s,%s,%s,%s' %s";
-
-char *getMySQLValues(int i, char *ptr)
-{
+	printf("addParameter\n");
+	
 	char buffers[F_COUNT][F_PRECISION];
 	memset(buffers, 0, sizeof(buffers));
 	
-	char values[VALUES_BUFFERSIZE];
-	memset(values, 0, sizeof(values));
+	char *parameter = calloc(CHAR_PARAMETER_BUFFERSIZE, sizeof(char));
 	
 	snprintf(buffers[0], F_PRECISION, "%f", results[i].mean);
 	snprintf(buffers[1], F_PRECISION, "%f", results[i].sd);
 	snprintf(buffers[2], F_PRECISION, "%f", results[i].max);
 	snprintf(buffers[3], F_PRECISION, "%f", results[i].min);
   
-	if(snprintf(values, VALUES_BUFFERSIZE, parameter_format, results[i].time, buffers[0], buffers[1], buffers[2], buffers[3], buffers[0]) >= VALUES_BUFFERSIZE)
+	if(snprintf(parameter, CHAR_PARAMETER_BUFFERSIZE, FORMAT_PARAMETER, 
+	    results[i].time, buffers[0], buffers[1], buffers[2], buffers[3], buffers[0]) >= CHAR_PARAMETER_BUFFERSIZE)
 	{
-	  printf("Buffer overflow in getMySQLValues");
+	  printf("Buffer overflow in addResultParameter");
 	} 
 	else 
 	{
-		strcat(ptr, values);
+	  strcat(ptrParameters, parameter);
 	}
 	
-	
-	return ptr;
+	return ptrParameters;
 }
 
 float getMean(float *num, int n)
