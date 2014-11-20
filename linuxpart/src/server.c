@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 // Socket libraries
 #include <unistd.h>
@@ -23,11 +24,19 @@
 #define MAXSIZE 1024
 #define END_OF_LINE_CHAR 1
 #define RESULT_SIZE 20
-#define SENSOR_NAME_SIZE 45
+
+// this will work until Sat, 20 Nov 2286 17:46:39 GMT
+#define VALUES_TIME_LENGTH 10
+#define VALUES_F_COUNT 5
+#define VALUES_F_PRECISION 6
+#define SPECIAL_CHARS 8
+
+#define PARAMETER_BUFFERSIZE VALUES_TIME_LENGTH + SPECIAL_CHARS + VALUES_F_PRECISION * VALUES_F_COUNT + END_OF_LINE_CHAR
 
 /* Structs */
 struct values 
 {
+	time_t time;
 	float min;
 	float max;
 	float mean;
@@ -165,6 +174,7 @@ void addData()
 	float *ptr = malloc(sizeof(float) * n);
 	ptr = getNumbers(ptr);
 
+	results[r_index].time = time(NULL);
 	results[r_index].mean = getMean(ptr, n);
 	results[r_index].sd = getSd(ptr, n);
 	results[r_index].min = getMin(ptr, n);
@@ -240,7 +250,7 @@ float * getNumbers(float * ptr){
 
 const char *cmd = "python /usr/bin/StoreToDb.py";
 
-const int MAX_SQL_QUERY_SIZE = (SENSOR_NAME_SIZE + END_OF_LINE_CHAR) * RESULT_SIZE;
+const int MAX_SQL_QUERY_SIZE = PARAMETER_BUFFERSIZE * RESULT_SIZE + END_OF_LINE_CHAR;
 
 void sendData()
 {
@@ -270,19 +280,15 @@ void sendData()
 char *addMySQLParam(char *sql, int i)
 {
 	printf("addMySQLParam\n");
-	char *sensor_name = calloc(END_OF_LINE_CHAR + SENSOR_NAME_SIZE, sizeof(char));
+	char *sensor_name = calloc(PARAMETER_BUFFERSIZE + END_OF_LINE_CHAR, sizeof(char));
 	return strcat(sql, getMySQLValues(i, sensor_name));;
 }
-
-#define VALUES_F_COUNT 5
-#define VALUES_F_PRECISION 6
-#define SPECIAL_CHAR 7
 
 const int F_COUNT = VALUES_F_COUNT;
 const int F_PRECISION = VALUES_F_PRECISION;
 const int F_BUFFERSIZE = VALUES_F_PRECISION + END_OF_LINE_CHAR;
-const int VALUES_BUFFERSIZE = sizeof(char) * (SPECIAL_CHAR + VALUES_F_PRECISION * VALUES_F_COUNT + END_OF_LINE_CHAR);
-const char *parameter_format = " '%s,%s,%s,%s' %s";
+const int VALUES_BUFFERSIZE = sizeof(char) * PARAMETER_BUFFERSIZE;
+const char *parameter_format = " %d '%s,%s,%s,%s' %s";
 
 char *getMySQLValues(int i, char *ptr)
 {
@@ -297,7 +303,7 @@ char *getMySQLValues(int i, char *ptr)
 	snprintf(buffers[2], F_PRECISION, "%f", results[i].max);
 	snprintf(buffers[3], F_PRECISION, "%f", results[i].min);
   
-	if(snprintf(values, VALUES_BUFFERSIZE, parameter_format, buffers[0], buffers[1], buffers[2], buffers[3], buffers[0]) >= VALUES_BUFFERSIZE)
+	if(snprintf(values, VALUES_BUFFERSIZE, parameter_format, results[i].time, buffers[0], buffers[1], buffers[2], buffers[3], buffers[0]) >= VALUES_BUFFERSIZE)
 	{
 	  printf("Buffer overflow in getMySQLValues");
 	} 

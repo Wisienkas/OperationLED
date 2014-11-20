@@ -1,6 +1,7 @@
 
 # Stores a collection of sensor inputs to a MySQL database
-# Input: int group_no, string sensor_name, data
+# Input: unixtime sensor_name data
+# example: 1416506319 'sensorname' 10
 import mysql.connector
 from sys import argv
 from datetime import datetime
@@ -28,14 +29,14 @@ else:
     curser = cnx.cursor()
 
     j = 1; # first index with useable data
-    dataRange = (len(argv) - 1)/2 # amount of useable data
+    dataRange = (len(argv) - 1)/3 # amount of useable data
     
     for i in range(0, dataRange):
         data_sensor = list()
-        data_sensor.append(datetime.now())
+        data_sensor.append(datetime.fromtimestamp(int(argv[j + i + 0])))
         data_sensor.append(3)
-        data_sensor.append(argv[j + i])
         data_sensor.append(argv[j + i + 1])
+        data_sensor.append(argv[j + i + 2])
         curser.execute(sql, data_sensor)
         j += 1
     
