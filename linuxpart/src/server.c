@@ -253,7 +253,6 @@ void sendData()
 		ptrParameters = addParameter(ptrParameters, i);
 		i++;
 	}
-	printf("Query: %s\n", ptrParameters);
 	
 	char *syscmd = calloc((END_OF_LINE_CHAR + strlen(cmd) + strlen(ptrParameters)), sizeof(char));
 	strcat(syscmd, strdup(cmd));
@@ -261,9 +260,15 @@ void sendData()
 	
 	printf("Calling command\n");
 	printf("%s\n", syscmd);
-	system(syscmd);
-
-	printf("Command executed, data sent to database\n");
+	int returnVal = system(syscmd);
+	if (returnVal != 0)
+	{
+	  printf("Command execution failed, no data was sent\n");
+	}
+	else
+	{
+	  printf("Command executed, data sent to database\n");
+	}
 	free(syscmd);
 	printf("Pointer has been set free\n");
 }
@@ -276,7 +281,7 @@ const char *FORMAT_PARAMETER = " %d '%s,%s,%s,%s' %s";
 
 char *addParameter(char *ptrParameters, int i)
 {
-	printf("addParameter\n");
+	printf("addParameter");
 	
 	char buffers[F_COUNT][F_PRECISION];
 	memset(buffers, 0, sizeof(buffers));
@@ -291,10 +296,11 @@ char *addParameter(char *ptrParameters, int i)
 	if(snprintf(parameter, CHAR_PARAMETER_BUFFERSIZE, FORMAT_PARAMETER, 
 	    results[i].time, buffers[0], buffers[1], buffers[2], buffers[3], buffers[0]) >= CHAR_PARAMETER_BUFFERSIZE)
 	{
-	  printf("Buffer overflow in addResultParameter");
+	  printf(" failed because of a buffer overflow\n");
 	} 
 	else 
 	{
+	  printf(" added \"%s\"\n", parameter);
 	  strcat(ptrParameters, parameter);
 	}
 	
