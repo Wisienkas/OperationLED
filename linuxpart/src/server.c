@@ -20,9 +20,8 @@
 #define MAXSIZE 1024
 
 /* Collection data */
-#define RESULT_SIZE 20
+#define RESULT_SIZE_DEFAULT 20
 #define RESULT_FIRST_INDEX 0
-#define RESULT_MAX_INDEX RESULT_SIZE - 1
 
 /* String defines*/
 #define END_OF_LINE_CHAR 1
@@ -48,8 +47,9 @@ struct values
 };
 
 /* global variables */
-struct values results[RESULT_SIZE];
+struct values *results;
 int r_index = 0;
+int result_size = RESULT_SIZE_DEFAULT;
 
 int client_fd, socket_fd, num;
 
@@ -79,6 +79,10 @@ float getMax(float *num, int n);
 
 int main(int argc, char *argv[]) 
 {
+	if(argc > 1)
+	{
+		result_size = atoi(argv[1]);
+	}
 	setup();
 	loop();
 
@@ -87,6 +91,9 @@ int main(int argc, char *argv[])
 
 void setup()
 {
+	// Initiates the result with the given size
+	results = calloc(result_size, sizeof(struct values *));
+
 	if ((socket_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		fprintf(stderr, "Socket Failure\n");
@@ -172,19 +179,20 @@ void addData()
 	float *ptr = malloc(sizeof(float) * n);
 	ptr = getNumbers(ptr);
 
-	results[r_index].time = time(NULL);
-	results[r_index].mean = getMean(ptr, n);
-	results[r_index].sd = getSd(ptr, n);
-	results[r_index].min = getMin(ptr, n);
-	results[r_index].max = getMax(ptr, n);
+	printf("r index: %d\n", r_index);
+	(results + r_index)->time = time(NULL);
+	(results + r_index)->mean = getMean(ptr, n);
+	(results + r_index)->sd = getSd(ptr, n);
+	(results + r_index)->min = getMin(ptr, n);
+	(results + r_index)->max = getMax(ptr, n);
 
-	printf("Data collected: %d of %d\n", r_index + 1, RESULT_MAX_INDEX + 1);
+	printf("Data collected: %d of %d\n", r_index + 1, result_size);
 
-	if(r_index >= RESULT_MAX_INDEX)
+	if(r_index >= result_size - 1)
 	{
 		sendData();
 		r_index = RESULT_FIRST_INDEX;
-		memset(results, 0, sizeof(results));
+		memset(results, 0, result_size * sizeof(struct values));
 	} else {
 		r_index++;
 	}
@@ -242,13 +250,13 @@ float * getNumbers(float * ptr){
 
 const char *cmd = "python /usr/bin/StoreToDb.py";
 
-const int MAX_PARAMETER_SIZE = PARAMETER_BUFFERSIZE * RESULT_SIZE + END_OF_LINE_CHAR;
-
 void sendData()
 {
-	char *ptrParameters = calloc(MAX_PARAMETER_SIZE, sizeof(char));
+
+	int MAX_PARAMETER_SIZE = PARAMETER_BUFFERSIZE * result_size + END_OF_LINE_CHAR;
+	char *ptrParameters = calloc(MAX_PARAMETER_SIZE , sizeof(char));
 	int i = 0;
-	while( i < RESULT_SIZE )
+	while( i < result_size )
 	{
 		ptrParameters = addParameter(ptrParameters, i);
 		i++;
