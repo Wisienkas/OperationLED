@@ -38,7 +38,7 @@ else:
         data_sensor.append(argv[j + i + 1])
         data_sensor.append(argv[j + i + 2])
         curser.execute(sql, data_sensor)
-        j += 1
+        j += 2
     
     cnx.commit()
     cnx.close()
