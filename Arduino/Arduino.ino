@@ -4,6 +4,26 @@
 // Analog pin the microphone uses
 const int SENSOR_PIN = A3;
 
+int SELECTOR_PINS[] = { 2, 4, 7 };
+
+int PWM_PINS[2][3] = { { 3, 5, 6}, { 9, 10, 11} };
+
+
+int color_array[8][2][3] = {
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } }, 
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } } 
+  };
+ 
+
+// there are 3 colors, R G B
+const int COLOR_COUNT = 3;
+
 // Number of LED's that are used
 const int LED_COUNT = 16;
 // Number of PWM sets that are used (3 PWM's per set)
@@ -73,7 +93,7 @@ void loop()
     Serial.println(clientRunning == true ? "true" : "false");
     
     // if the process is already running, this skips it in this case and resets the buffer
-    if (clientRunning == false)
+    if (clientRunning == false && 1 == 2)
     {      
       pClient.begin("/usr/bin/hwclient");
       
@@ -92,6 +112,8 @@ void loop()
   }
 }
 
+float oldReading = 0;
+
 // Reads the output from the microphone every 2 ms
 // This is also where code to update the LED's will be placed later
 // returns the average sensor value over LOOP_SIZE * 2 ms
@@ -101,14 +123,32 @@ float processInputOutput()
   
   for (int i = 0; i < LOOP_SIZE; i++)
   {
-    // TODO: insert code that changes lights here
+    int percent = percentOf(oldReading, MAX_SENSOR);
     
-    tmp += analogRead(SENSOR_PIN);
+    for (int led_i = 0; led_i < LOOP_SIZE; led_i++)
+    {
+      digitalWrite(SELECTOR_PINS[0], bitRead(led_i, 0));
+      digitalWrite(SELECTOR_PINS[1], bitRead(led_i, 1));
+      digitalWrite(SELECTOR_PINS[2], bitRead(led_i, 2));
+    
+      // 0: left, 1: right
+      for (int pwm_i = 0; pwm_i < PWM_COUNT; pwm_i++)
+      {
+          analogWrite(PWM_PINS[pwm_i][0], color_array[ledIndex][pwmIndex][0]);
+          analogWrite(PWM_PINS[pwm_i][1], color_array[ledIndex][pwmIndex][1]);
+          analogWrite(PWM_PINS[pwm_i][2], color_array[ledIndex][pwmIndex][2]);
+      }
+    }
+    
+    //tmp += analogRead(SENSOR_PIN);
+    tmp += random(0, 720);
     delay(2);
   }
 
   // average over LOOP_SIZE*2 ms
-  return tmp / LOOP_SIZE;
+  oldReading = tmp / LOOP_SIZE;
+ 
+  return oldReading;
 }
 
 // add the avg to the buffers
@@ -125,3 +165,14 @@ void addToBuffers(int avg)
   }
 }
 
+int percentOf(int value, int maxValue)
+{
+  int val = (value*100)/maxValue;
+  return (val < 100 ? val : 100);
+}
+ 
+void calculateColors()
+{
+  //oldReading
+  //color_array
+}
