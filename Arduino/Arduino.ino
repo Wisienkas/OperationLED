@@ -4,6 +4,7 @@
 // Analog pin the microphone uses
 const int SENSOR_PIN = A3;
 
+int SELECTOR_COUNT = 3;
 int SELECTOR_PINS[] = { 2, 4, 7 };
 
 int PWM_PINS[2][3] = { { 3, 5, 6}, { 9, 10, 11} };
@@ -67,6 +68,16 @@ void setup()
   Bridge.begin();
   Serial.begin(9600);
   
+  for(int i = 0; i < COLOR_COUNT; i++)
+  {
+    pinMode(SELECTOR_PINS[i], OUTPUT);
+
+    for (int j = 0; j < PWM_COUNT;j++)
+    {
+      pinMode(PWM_PINS[i][j], OUTPUT); 
+    }
+  }
+  
   lastMillis = millis();
 }
 
@@ -114,6 +125,8 @@ void loop()
 
 float oldReading = 0;
 
+long lastColorMillis = 0;
+
 // Reads the output from the microphone every 2 ms
 // This is also where code to update the LED's will be placed later
 // returns the average sensor value over LOOP_SIZE * 2 ms
@@ -121,28 +134,31 @@ float processInputOutput()
 {
   float tmp = 0;
   
-  for (int i = 0; i < LOOP_SIZE; i++)
+  if (lastColorMillis + 1000 < millis())
   {
-    int percent = percentOf(oldReading, MAX_SENSOR);
-    
-    for (int led_i = 0; led_i < LOOP_SIZE; led_i++)
+    calculateColors();
+    lastColorMillis = millis();
+  }
+  
+  for (int row = 0; row < LOOP_SIZE; row++)
+  {
+    for (int selector = 0; selector < SELECTOR_COUNT; selector++)
     {
-      digitalWrite(SELECTOR_PINS[0], bitRead(led_i, 0));
-      digitalWrite(SELECTOR_PINS[1], bitRead(led_i, 1));
-      digitalWrite(SELECTOR_PINS[2], bitRead(led_i, 2));
+      digitalWrite(SELECTOR_PINS[selector], bitRead(row, selector));
+    }
     
-      // 0: left, 1: right
-      for (int pwm_i = 0; pwm_i < PWM_COUNT; pwm_i++)
+    // 0: left, 1: right
+    for (int pwm_i = 0; pwm_i < PWM_COUNT; pwm_i++)
+    {
+      for (int color = 0; color < COLOR_COUNT; color++)
       {
-          analogWrite(PWM_PINS[pwm_i][0], color_array[ledIndex][pwmIndex][0]);
-          analogWrite(PWM_PINS[pwm_i][1], color_array[ledIndex][pwmIndex][1]);
-          analogWrite(PWM_PINS[pwm_i][2], color_array[ledIndex][pwmIndex][2]);
+        analogWrite(PWM_PINS[pwm_i][color], color_array[row][pwm_i][color]);
       }
     }
     
     //tmp += analogRead(SENSOR_PIN);
     tmp += random(0, 720);
-    delay(2);
+    delayMicroseconds(1.7);
   }
 
   // average over LOOP_SIZE*2 ms
@@ -168,11 +184,13 @@ void addToBuffers(int avg)
 int percentOf(int value, int maxValue)
 {
   int val = (value*100)/maxValue;
-  return (val < 100 ? val : 100);
+  return (val > 100) ? 100 : ((val < 0) ? 0 : val);
 }
  
 void calculateColors()
 {
-  //oldReading
-  //color_array
+  for (int i = 0; i < COLOR_COUNT; i++)
+  {
+    color_array[0][0][i] = (int)oldReading % 255;
+  }
 }
