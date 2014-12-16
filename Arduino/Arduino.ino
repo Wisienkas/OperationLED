@@ -1,41 +1,40 @@
 #include <Process.h>
 
+// Number of pin's used for multiplex selector
+#define SELECTOR_COUNT 3
+// Number of LED's that are used
+#define LED_COUNT 16
+// Number of PWM sets that are used (3 PWM's per set)
+#define PWM_COUNT 2
+
 // Analog pin the microphone uses
 const int SENSOR_PIN = A3;
 
-int SELECTOR_COUNT = 3;
-int SELECTOR_PINS[] = { 2, 4, 7 };
-
-int PWM_PINS[2][3] = { { 3, 5, 6}, { 9, 10, 11} };
-
-
-int color_array[8][2][3] = {
-    { { 255, 0, 0 }, { 255, 255, 255 } },
-    { { 255, 255, 255 }, { 255, 255, 255 } }, 
-    { { 255, 255, 255 }, { 255, 255, 255 } },
-    { { 255, 255, 255 }, { 255, 255, 255 } },
-    { { 255, 255, 255 }, { 255, 255, 255 } },
-    { { 255, 255, 255 }, { 255, 255, 255 } },
-    { { 255, 255, 255 }, { 255, 255, 255 } },
-    { { 255, 255, 255 }, { 255, 255, 255 } } 
-  };
- 
-
-// there are 3 colors, R G B
-const int COLOR_COUNT = 3;
-
-// Number of LED's that are used
-const int LED_COUNT = 16;
-// Number of PWM sets that are used (3 PWM's per set)
-const int PWM_COUNT = 2;
+int SELECTOR_PINS[SELECTOR_COUNT] = { 2, 4, 7 };
 
 // the more PWM sets used the more LED's 
 // can be changed at the same time
 const int LOOP_SIZE = LED_COUNT/PWM_COUNT;
 
+// there are 3 colors, R G B
+const int COLOR_COUNT = 3;
+
+int color_array[LOOP_SIZE][PWM_COUNT][COLOR_COUNT] = {
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 0, 0, 0 } },
+    { { 0, 0, 0 }, { 0, 0, 0 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 0, 0, 0 } },
+    { { 0, 0, 0 }, { 0, 0, 0 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 0, 0, 0 } }
+  };
+ 
+int PWM_PINS[PWM_COUNT][SELECTOR_COUNT] = { { 3, 5, 6}, { 9, 10, 11} };
+
 // Maximum analog value is 1023
 // The microphones max is 704
-const int MAX_SENSOR = 704;
+const int MAX_SENSOR = 350;
 
 // Gets filled in approximately 1 second
 const int SENSOR_ELEMENTS_SIZE = 58;
@@ -80,19 +79,30 @@ void setup()
   lastMillis = millis();
 }
 
+int minReading = MAX_SENSOR;
+float oldReading = 0;
+int maxReading = 0;
+
+unsigned long waitTime = 0;
+
+
 void loop() 
 {
   float avg = processInputOutput();
   addToBuffers(avg);
   
   // only display once per second
-  if (sensor_elements == 0)
+  if (isTime(&waitTime, 1000))
   {
-  calculateColors();
+   calculateColors();
+    
+    minReading = MAX_SENSOR;
+    maxReading = 0;
+
     // lastWhole is the number of seconds a complete buffer 0-60 took
     Serial.println("Second: " + String(bufferIndex, DEC) + ", avg: " + String(buffer[bufferIndex-1], DEC) + ", seconds: " + String(lastWhole, DEC));
   }
-  
+    
   // once the buffer is full, start sending data to local client
   if (bufferIndex >= BUFFER_SIZE)
   {
@@ -123,15 +133,12 @@ void loop()
   }
 }
 
-float oldReading = 0;
-
 // Reads the output from the microphone every 2 ms
 // This is also where code to update the LED's will be placed later
 // returns the average sensor value over LOOP_SIZE * 2 ms
 float processInputOutput()
 {
   float tmp = 0;
-  
   
   for (int row = 0; row < LOOP_SIZE; row++) 
   {
@@ -157,14 +164,15 @@ float processInputOutput()
     }
     
     //tmp += analogRead(SENSOR_PIN);
-    tmp += random(0, 720);
-    delayMicroseconds(1700);
- 
-
-}
+    tmp += random(0, MAX_SENSOR);
+    delayMicroseconds(1000);
+  }
 
   // average over LOOP_SIZE*2 ms
   oldReading = tmp / LOOP_SIZE;
+  
+  if (oldReading < minReading) minReading = oldReading;
+  if (oldReading > maxReading) maxReading = oldReading;
  
   return oldReading;
 }
@@ -191,7 +199,64 @@ int percentOf(int value, int maxValue)
  
 void calculateColors()
 {
-  color_array[0][0][(int)oldReading % 3] = 250;
-  color_array[0][0][(int)(oldReading + 1) % 3] = 0;
-  color_array[0][0][(int)(oldReading + 1) % 3] = 0;
+  float voltdb1 = 10 * log10(oldReading/MAX_SENSOR);
+  float voltdb3 = 10 * log10(MAX_SENSOR/minReading);
+  float voltdb5 = 10 * log10(maxReading/minReading);
+  
+  Serial.println("VoltDb10: "+  String(voltdb1, DEC));
+  Serial.println("VoltDbMin: "+  String(voltdb3, DEC));
+  Serial.println("VoltDbDiv: "+  String(voltdb5, DEC));
+  
+  int row_split = MAX_SENSOR / LOOP_SIZE;
+  
+  int minTo = minReading / row_split;
+  int maxTo = maxReading / row_split;
+
+  Serial.println("row-split: " + String(row_split, DEC));
+  Serial.println("min-max: " + String(minReading, DEC) + ", " + String(maxReading, DEC));
+  Serial.println("to: " + String(minTo, DEC) + ", " + String(maxTo, DEC));
+  
+  for (int row = 0; row < LOOP_SIZE; row++)
+  {
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    
+    int realRow = LOOP_SIZE - row;
+    
+    if (realRow > maxTo)
+    {
+    }
+    else if (realRow == maxTo)
+    {
+      r = 255;
+    }
+    else if (realRow <= minTo)
+    {
+      g = 255;
+    }
+    else
+    {
+      r = 250;
+      g = 150;
+    }
+    
+    for (int pwm = 0; pwm < PWM_COUNT;pwm++)
+    {
+      color_array[row][pwm][0] = r;
+      color_array[row][pwm][1] = g;
+      color_array[row][pwm][2] = b;
+    }
+  }
 }
+
+boolean isTime(unsigned long *timeMark, unsigned long timeInterval) {
+    // from https://gist.github.com/ah01/1654676
+  
+    if (millis() - *timeMark >= timeInterval) {
+        *timeMark = millis();
+        return true;
+    }    
+    return false;
+}
+
