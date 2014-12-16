@@ -1,5 +1,4 @@
 #include <Process.h>
-#include <String.h>
 
 // Analog pin the microphone uses
 const int SENSOR_PIN = A3;
@@ -11,7 +10,7 @@ int PWM_PINS[2][3] = { { 3, 5, 6}, { 9, 10, 11} };
 
 
 int color_array[8][2][3] = {
-    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 0, 0 }, { 255, 255, 255 } },
     { { 255, 255, 255 }, { 255, 255, 255 } }, 
     { { 255, 255, 255 }, { 255, 255, 255 } },
     { { 255, 255, 255 }, { 255, 255, 255 } },
@@ -89,6 +88,7 @@ void loop()
   // only display once per second
   if (sensor_elements == 0)
   {
+  calculateColors();
     // lastWhole is the number of seconds a complete buffer 0-60 took
     Serial.println("Second: " + String(bufferIndex, DEC) + ", avg: " + String(buffer[bufferIndex-1], DEC) + ", seconds: " + String(lastWhole, DEC));
   }
@@ -125,8 +125,6 @@ void loop()
 
 float oldReading = 0;
 
-long lastColorMillis = 0;
-
 // Reads the output from the microphone every 2 ms
 // This is also where code to update the LED's will be placed later
 // returns the average sensor value over LOOP_SIZE * 2 ms
@@ -134,14 +132,16 @@ float processInputOutput()
 {
   float tmp = 0;
   
-  if (lastColorMillis + 1000 < millis())
-  {
-    calculateColors();
-    lastColorMillis = millis();
-  }
   
-  for (int row = 0; row < LOOP_SIZE; row++)
+  for (int row = 0; row < LOOP_SIZE; row++) 
   {
+    for (int pwm_i = 0; pwm_i < PWM_COUNT; pwm_i++)
+    {
+      for (int color = 0; color < COLOR_COUNT; color++)
+      {
+        analogWrite(PWM_PINS[pwm_i][color], 0);
+      }
+    } 
     for (int selector = 0; selector < SELECTOR_COUNT; selector++)
     {
       digitalWrite(SELECTOR_PINS[selector], bitRead(row, selector));
@@ -158,8 +158,10 @@ float processInputOutput()
     
     //tmp += analogRead(SENSOR_PIN);
     tmp += random(0, 720);
-    delayMicroseconds(1.7);
-  }
+    delayMicroseconds(1700);
+ 
+
+}
 
   // average over LOOP_SIZE*2 ms
   oldReading = tmp / LOOP_SIZE;
@@ -189,8 +191,7 @@ int percentOf(int value, int maxValue)
  
 void calculateColors()
 {
-  for (int i = 0; i < COLOR_COUNT; i++)
-  {
-    color_array[0][0][i] = (int)oldReading % 255;
-  }
+  color_array[0][0][(int)oldReading % 3] = 250;
+  color_array[0][0][(int)(oldReading + 1) % 3] = 0;
+  color_array[0][0][(int)(oldReading + 1) % 3] = 0;
 }
