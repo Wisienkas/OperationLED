@@ -1,21 +1,40 @@
 #include <Process.h>
-#include <String.h>
+
+// Number of pin's used for multiplex selector
+#define SELECTOR_COUNT 3
+// Number of LED's that are used
+#define LED_COUNT 16
+// Number of PWM sets that are used (3 PWM's per set)
+#define PWM_COUNT 2
 
 // Analog pin the microphone uses
 const int SENSOR_PIN = A3;
 
-// Number of LED's that are used
-const int LED_COUNT = 16;
-// Number of PWM sets that are used (3 PWM's per set)
-const int PWM_COUNT = 2;
+int SELECTOR_PINS[SELECTOR_COUNT] = { 2, 4, 7 };
 
 // the more PWM sets used the more LED's 
 // can be changed at the same time
 const int LOOP_SIZE = LED_COUNT/PWM_COUNT;
 
+// there are 3 colors, R G B
+const int COLOR_COUNT = 3;
+
+int color_array[LOOP_SIZE][PWM_COUNT][COLOR_COUNT] = {
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 0, 0, 0 } },
+    { { 0, 0, 0 }, { 0, 0, 0 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 0, 0, 0 } },
+    { { 0, 0, 0 }, { 0, 0, 0 } },
+    { { 255, 255, 255 }, { 255, 255, 255 } },
+    { { 255, 255, 255 }, { 0, 0, 0 } }
+  };
+ 
+int PWM_PINS[PWM_COUNT][SELECTOR_COUNT] = { { 3, 5, 6}, { 9, 10, 11} };
+
 // Maximum analog value is 1023
 // The microphones max is 704
-const int MAX_SENSOR = 704;
+const int MAX_SENSOR = 350;
 
 // Gets filled in approximately 1 second
 const int SENSOR_ELEMENTS_SIZE = 58;
@@ -47,8 +66,25 @@ void setup()
   Bridge.begin();
   Serial.begin(9600);
   
+  for(int i = 0; i < COLOR_COUNT; i++)
+  {
+    pinMode(SELECTOR_PINS[i], OUTPUT);
+
+    for (int j = 0; j < PWM_COUNT;j++)
+    {
+      pinMode(PWM_PINS[i][j], OUTPUT); 
+    }
+  }
+  
   lastMillis = millis();
 }
+
+int minReading = MAX_SENSOR;
+float oldReading = 0;
+int maxReading = 0;
+
+unsigned long waitTime = 0;
+
 
 void loop() 
 {
@@ -56,12 +92,17 @@ void loop()
   addToBuffers(avg);
   
   // only display once per second
-  if (sensor_elements == 0)
+  if (isTime(&waitTime, 1000))
   {
+    calculateColors();
+    
+    minReading = MAX_SENSOR;
+    maxReading = 0;
+
     // lastWhole is the number of seconds a complete buffer 0-60 took
     Serial.println("Second: " + String(bufferIndex, DEC) + ", avg: " + String(buffer[bufferIndex-1], DEC) + ", seconds: " + String(lastWhole, DEC));
   }
-  
+    
   // once the buffer is full, start sending data to local client
   if (bufferIndex >= BUFFER_SIZE)
   {
@@ -99,16 +140,40 @@ float processInputOutput()
 {
   float tmp = 0;
   
-  for (int i = 0; i < LOOP_SIZE; i++)
+  for (int row = 0; row < LOOP_SIZE; row++) 
   {
-    // TODO: insert code that changes lights here
+    for (int pwm_i = 0; pwm_i < PWM_COUNT; pwm_i++)
+    {
+      for (int color = 0; color < COLOR_COUNT; color++)
+      {
+        analogWrite(PWM_PINS[pwm_i][color], 0);
+      }
+    } 
+    for (int selector = 0; selector < SELECTOR_COUNT; selector++)
+    {
+      digitalWrite(SELECTOR_PINS[selector], bitRead(row, selector));
+    }
+    
+    // 0: left, 1: right
+    for (int pwm_i = 0; pwm_i < PWM_COUNT; pwm_i++)
+    {
+      for (int color = 0; color < COLOR_COUNT; color++)
+      {
+        analogWrite(PWM_PINS[pwm_i][color], color_array[row][pwm_i][color]);
+      }
+    }
     
     tmp += analogRead(SENSOR_PIN);
-    delay(2);
+    delayMicroseconds(1700);
   }
 
   // average over LOOP_SIZE*2 ms
-  return tmp / LOOP_SIZE;
+  oldReading = tmp / LOOP_SIZE;
+  
+  if (oldReading < minReading) minReading = oldReading;
+  if (oldReading > maxReading) maxReading = oldReading;
+ 
+  return oldReading;
 }
 
 // add the avg to the buffers
@@ -123,5 +188,63 @@ void addToBuffers(int avg)
     
     sensor_avg = sensor_elements = 0;
   }
+}
+
+int percentOf(int value, int maxValue)
+{
+  int val = (value*100)/maxValue;
+  return (val > 100) ? 100 : ((val < 0) ? 0 : val);
+}
+ 
+void calculateColors()
+{
+  int row_split = MAX_SENSOR / LOOP_SIZE;
+  
+  int minTo = max(minReading / row_split, 1);
+  int maxTo = max(min(maxReading / row_split, LOOP_SIZE), 3);
+  int avg = min(max(oldReading / row_split, minTo+1), maxTo-1);
+  
+  for (int row = 0; row < LOOP_SIZE; row++)
+  {
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    
+    int realRow = LOOP_SIZE - row;
+    
+    if (realRow > maxTo)
+    {
+    }
+    else if (realRow == avg)
+    {
+      r = 250;
+      g = 150;
+    }
+    else if (realRow > avg && realRow <= maxTo)
+    {
+      g = 255;
+    }
+    else if (realRow < avg && realRow >= minTo)
+    {
+      r = 255;
+    }
+    
+    for (int pwm = 0; pwm < PWM_COUNT;pwm++)
+    {
+      color_array[row][pwm][0] = r;
+      color_array[row][pwm][1] = g;
+      color_array[row][pwm][2] = b;
+    }
+  }
+}
+
+boolean isTime(unsigned long *timeMark, unsigned long timeInterval) {
+    // from https://gist.github.com/ah01/1654676
+  
+    if (millis() - *timeMark >= timeInterval) {
+        *timeMark = millis();
+        return true;
+    }    
+    return false;
 }
 
