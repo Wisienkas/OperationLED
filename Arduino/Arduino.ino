@@ -163,9 +163,8 @@ float processInputOutput()
       }
     }
     
-    //tmp += analogRead(SENSOR_PIN);
-    tmp += random(0, MAX_SENSOR);
-    delayMicroseconds(1000);
+    tmp += analogRead(SENSOR_PIN);
+    delayMicroseconds(1700);
   }
 
   // average over LOOP_SIZE*2 ms
