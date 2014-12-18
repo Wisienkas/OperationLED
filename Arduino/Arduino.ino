@@ -198,22 +198,11 @@ int percentOf(int value, int maxValue)
  
 void calculateColors()
 {
-  float voltdb1 = 10 * log10(oldReading/MAX_SENSOR);
-  float voltdb3 = 10 * log10(MAX_SENSOR/minReading);
-  float voltdb5 = 10 * log10(maxReading/minReading);
-  
-  Serial.println("VoltDb10: "+  String(voltdb1, DEC));
-  Serial.println("VoltDbMin: "+  String(voltdb3, DEC));
-  Serial.println("VoltDbDiv: "+  String(voltdb5, DEC));
-  
   int row_split = MAX_SENSOR / LOOP_SIZE;
   
-  int minTo = minReading / row_split;
-  int maxTo = maxReading / row_split;
-
-  Serial.println("row-split: " + String(row_split, DEC));
-  Serial.println("min-max: " + String(minReading, DEC) + ", " + String(maxReading, DEC));
-  Serial.println("to: " + String(minTo, DEC) + ", " + String(maxTo, DEC));
+  int minTo = max(minReading / row_split, 1);
+  int maxTo = max(min(maxReading / row_split, LOOP_SIZE), 3);
+  int avg = min(max(oldReading / row_split, minTo+1), maxTo-1);
   
   for (int row = 0; row < LOOP_SIZE; row++)
   {
@@ -226,18 +215,18 @@ void calculateColors()
     if (realRow > maxTo)
     {
     }
-    else if (realRow == maxTo)
-    {
-      r = 255;
-    }
-    else if (realRow <= minTo)
-    {
-      g = 255;
-    }
-    else
+    else if (realRow == avg)
     {
       r = 250;
       g = 150;
+    }
+    else if (realRow > avg && realRow <= maxTo)
+    {
+      g = 255;
+    }
+    else if (realRow < avg && realRow >= minTo)
+    {
+      r = 255;
     }
     
     for (int pwm = 0; pwm < PWM_COUNT;pwm++)
