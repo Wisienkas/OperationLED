@@ -114,7 +114,7 @@ void loop()
     Serial.println(clientRunning == true ? "true" : "false");
     
     // if the process is already running, this skips it in this case and resets the buffer
-    if (clientRunning == false && 1 == 2)
+    if (clientRunning == false)
     {      
       pClient.begin("/usr/bin/hwclient");
       
