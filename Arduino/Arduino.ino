@@ -30,7 +30,7 @@ int color_array[LOOP_SIZE][PWM_COUNT][COLOR_COUNT] = {
     { { 255, 255, 255 }, { 0, 0, 0 } }
   };
  
-int PWM_PINS[PWM_COUNT][SELECTOR_COUNT] = { { 3, 5, 6}, { 9, 10, 11} };
+int PWM_PINS[PWM_COUNT][COLOR_COUNT] = { { 3, 5, 6}, { 9, 10, 11} };
 
 // Maximum analog value is 1023
 // The microphones max is 704
@@ -118,11 +118,9 @@ void loop()
     {      
       pClient.begin("/usr/bin/hwclient");
       
+      // each seconds reading is added as parameter
       for (int i = 0; i < bufferIndex; i++)
-      {
-        // each seconds reading is added as parameter
         pClient.addParameter(String(buffer[i], DEC));
-      }
       
       // runs the client while the sketch continues
       pClient.runAsynchronously();
@@ -150,9 +148,7 @@ float processInputOutput()
       }
     } 
     for (int selector = 0; selector < SELECTOR_COUNT; selector++)
-    {
       digitalWrite(SELECTOR_PINS[selector], bitRead(row, selector));
-    }
     
     // 0: left, 1: right
     for (int pwm_i = 0; pwm_i < PWM_COUNT; pwm_i++)
