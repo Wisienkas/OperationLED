@@ -94,7 +94,7 @@ void loop()
   // only display once per second
   if (isTime(&waitTime, 1000))
   {
-   calculateColors();
+    calculateColors();
     
     minReading = MAX_SENSOR;
     maxReading = 0;
