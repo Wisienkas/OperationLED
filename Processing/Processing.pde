@@ -7,9 +7,11 @@ import java.util.Map;
 import java.util.Calendar;
 private static final String TABLE = "hwr2014e_db.sensors";
 
+//Saving database calls to a string with a variable "TABLE"
 private static final String SELECT_ROW_COUNT = "SELECT count(sensor_data) FROM " + TABLE + " WHERE group_no='3';";
 private static final String SELECT_ROW_DATA = "SELECT date_time, sensor_name FROM " + TABLE + " WHERE group_no='3' " + " ORDER BY date_time ASC LIMIT %s;";
 
+//Database connection details saved in strings
 private static final String SERVER = "jclarsen.dk";
 private static final String DATABASE = "hwr2014e_db";
 private static final String DB_USER = "hwr";
@@ -39,13 +41,17 @@ public Map < Integer, SpecificData < Integer >> weekmap = new TreeMap < Integer,
 public Map < Integer, SpecificData < Integer >> datemap = new TreeMap < Integer, SpecificData < Integer >> ();
 public Map < Float, SpecificData < Float >> hourmap = new TreeMap < Float, SpecificData < Float >> ();
 
+//creating GPlots 1-4 (graphs)
 public GPlot plot1, plot2, plot3, plot4;
 
+//creating the arrays and points to fill out the plots
 public GPointsArray weekPoints, datePoints, hourPointsAvg, hourPointsMin,
 hourPointsMax, dbPoints;
 
+//creating a boolean that we use later to see if anything changed
 public boolean hasChanged = false;
 
+//Setting start values of the selected week and day
 public int selectedWeek = 50;
 public int selectedDate = 4;
 private int currWidth;
@@ -141,10 +147,11 @@ public void reloadData() {
       {
         println("Cannot connect to sql");
         status.setText("Cannot connect to sql", true);
-      } else {
+      } else { // if database connection is succeeded
         status.setText("Downloading data from MySQL database...", true);
       }
-
+      
+      //query the database with the previously defined strings
       msql.query(SELECT_ROW_COUNT);
       msql.next();
 
@@ -153,7 +160,7 @@ public void reloadData() {
       msql.query(String.format(SELECT_ROW_DATA, rows));
 
       datamap.clear();
-
+      
       while (msql.next()) {
         String[] data = msql.getString(2).split(",");
 
@@ -166,6 +173,7 @@ public void reloadData() {
         datamap.put(date, new Data(date, min, max, avg, stdvariation));
 
       }
+      //call to update graphs
       reparseMap();
     }
   }).start();
@@ -201,11 +209,11 @@ public void reparseMap(boolean requestRedraw) {
 
     week_min = Math.min(entry.getKey(), week_min);
     week_max = Math.max(entry.getKey(), week_max);
-
+ 
     selectedWeek = (selectedWeek == -1 ? week : selectedWeek);
 
     Helper.addData(weekmap, week, String.valueOf(week), entrydata);
-
+    
     if (selectedWeek == week) {
       selectedDate = (selectedDate == -1 ? day : selectedDate);
 
@@ -253,7 +261,7 @@ public void reparseMap(boolean requestRedraw) {
     hourPointsMax.add(key, val.max(), val.description);
     dbPoints.add(key, dBgain, val.description);
   }
-
+  //adding content to the graphs
   plot1.setPoints(weekPoints);
   plot2.setPoints(datePoints);
   plot3.setPoints(hourPointsAvg);
@@ -277,13 +285,14 @@ public void reparseMap(boolean requestRedraw) {
 }
 
 void draw() {
+  //if the window is re-sized update the width/height and set hasChanged to true
   if (currWidth != width || currHeight != height) {
     currWidth = width;
     currHeight = height;
     coordinates[4][0] = width / 2;
     hasChanged = true;
   }
-
+  //if hasChanged is true re-draw the graphs
   if (hasChanged) {
 
     background(255);
@@ -352,7 +361,7 @@ void draw() {
 }
 
 public void mouseClicked() {
-
+  //if the mouse is over plot1 what is it block is it hovering over
   if (plot1.isOverBox(mouseX, mouseY)) {
 
     int choice = Helper.calculateIndex(plot1, weekPoints, this);
@@ -368,6 +377,7 @@ public void mouseClicked() {
 
       reparseMap();
     }
+  //if the mouse is over plot2 what is it block is it hovering over
   } else if (plot2.isOverBox(mouseX, mouseY)) {
     selectedDate = Helper.calculateIndex(plot2, datePoints, this);
     reparseMap();
