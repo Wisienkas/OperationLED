@@ -184,7 +184,7 @@ public class ProcessingJava extends PApplet {
 		float hour_min = Float.MAX_VALUE;
 		float hour_max = -1;
 
-		for (Map.Entry<Long, Data> entry : datamap.entrySet()) {
+		for (Entry<Long, Data> entry : datamap.entrySet()) {
 			Data entrydata = entry.getValue();
 
 			Calendar cal = Calendar.getInstance();
