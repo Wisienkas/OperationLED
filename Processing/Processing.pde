@@ -1,10 +1,15 @@
-import de.bezier.data.sql.*; //Library for the MySQL connection
-import grafica.*; //Library from the plotting
-import java.util.Date;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import grafica.*;
+
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.Calendar;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+
+import processing.core.*;
+import de.bezier.data.sql.*; //Library for the MySQL connection
+
 private static final String TABLE = "hwr2014e_db.sensors";
 
 //Saving database calls to a string with a variable "TABLE"
