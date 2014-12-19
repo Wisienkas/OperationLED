@@ -1,0 +1,14 @@
+
+
+
+
+
+.build/yun/src/sketch.cpp : src/sketch.ino
+	@mkdir -p .build/yun/src
+	@echo [93msrc/sketch.ino[0m
+	@/usr/local/bin/ino preproc  -o $@ $^
+
+
+all : .build/yun/src/sketch.cpp
+	@true
+
